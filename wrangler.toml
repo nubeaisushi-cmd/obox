@@ -8,4 +8,4 @@ compatibility_date = "2025-01-01"
 crons = ["* * * * *"]
 
 [vars]
-APP_URL = "https://TU-SITIO.pages.dev"
+APP_URL = "https://obox.pages.dev"
