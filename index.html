@@ -1,0 +1,339 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#17142B">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Obox">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>Obox</title>
+<script>try{var t=localStorage.getItem("obox.theme");if(t==="light"||t==="dark")document.documentElement.setAttribute("data-theme",t)}catch(e){}</script>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Cdefs%3E%3ClinearGradient id='g' gradientUnits='userSpaceOnUse' x1='4' x2='60'%3E%3Cstop offset='0' stop-color='%23503ED2'/%3E%3Cstop offset='.55' stop-color='%239C36C8'/%3E%3Cstop offset='1' stop-color='%23E42BAB'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='64' height='64' rx='14' fill='%23050507'/%3E%3Ccircle cx='32' cy='32' r='21' fill='none' stroke='url(%23g)' stroke-width='4.4'/%3E%3Cpath d='M23.5 23.5L40.5 40.5M40.5 23.5L23.5 40.5' stroke='url(%23g)' stroke-width='2.8' fill='none'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500..800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false"><defs>
+  <linearGradient id="obox-g" gradientUnits="userSpaceOnUse" x1="2" y1="0" x2="62" y2="0"><stop offset="0" stop-color="#503ED2"/><stop offset=".55" stop-color="#9C36C8"/><stop offset="1" stop-color="#E42BAB"/></linearGradient>
+  <symbol id="obox-mark" viewBox="0 0 64 64"><circle cx="32" cy="32" r="27.4" fill="none" stroke="url(#obox-g)" stroke-width="5.2"/><path d="M20.1 20.1L43.9 43.9M43.9 20.1L20.1 43.9" stroke="url(#obox-g)" stroke-width="3.2" fill="none"/></symbol>
+</defs></svg>
+
+
+<canvas id="confetti-canvas" aria-hidden="true"></canvas>
+<div class="celebrate" id="celebrate" role="status" aria-live="polite"></div>
+<div class="toast" id="toast" role="status" aria-live="polite">
+  <span class="toast-text" id="toast-text"></span>
+  <button type="button" id="toast-btn" hidden></button>
+</div>
+
+<div class="day-modal-backdrop" id="day-modal-backdrop">
+  <div class="day-modal" role="dialog" aria-modal="true" aria-labelledby="day-modal-title">
+    <div class="day-modal-head">
+      <h2 id="day-modal-title">—</h2>
+      <button type="button" id="day-modal-close" class="icon-btn" aria-label="Cerrar">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>
+      </button>
+    </div>
+    <div class="list" id="day-modal-list"></div>
+    <div class="day-modal-foot">
+      <button type="button" class="btn secondary sm block" id="day-modal-add">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>
+        Agregar tarea este día
+      </button>
+      <button type="button" class="btn secondary sm block" id="day-modal-add-ev">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="5" width="18" height="16" rx="3"/><path d="M8 3v4M16 3v4M3 10h18"/></svg>
+        Agregar evento (reunión, recordatorio…)
+      </button>
+    </div>
+  </div>
+</div>
+
+<div class="gate" id="gate" hidden>
+  <button type="button" class="icon-btn theme-toggle gate-theme" id="btn-theme-gate" aria-label="Cambiar entre tema claro y oscuro"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></svg></button>
+  <div class="card gate-card" role="status" aria-live="polite">
+    <svg class="obox-hero" viewBox="0 0 64 64" aria-hidden="true"><use href="#obox-mark"/></svg>
+    <span class="wordmark">obox</span>
+    <h2 id="gate-title">Un momento…</h2>
+    <div id="gate-who"></div>
+    <p id="gate-text"></p>
+    <p id="gate-extra"></p>
+    <div id="gate-actions" style="margin-top:16px;display:flex;gap:10px;justify-content:center;flex-wrap:wrap"></div>
+  </div>
+</div>
+
+<div class="day-modal-backdrop" id="card-modal-backdrop">
+  <div class="day-modal wide" role="dialog" aria-modal="true" aria-label="Tarjeta">
+    <div class="day-modal-head">
+      <input class="ctl cm-title" id="cm-title" aria-label="Título de la tarjeta" maxlength="200">
+      <button type="button" id="cm-close" class="icon-btn" aria-label="Cerrar">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>
+      </button>
+    </div>
+    <p class="cm-sub" id="cm-sub"></p>
+    <div class="cm-grid">
+      <div class="field"><label class="field-label" for="cm-col">Columna</label><select class="ctl" id="cm-col"></select></div>
+      <div class="field"><label class="field-label" for="cm-vence">Vence</label><input class="ctl" type="date" id="cm-vence"></div>
+    </div>
+    <div id="cm-asg-wrap" hidden>
+      <span class="field-label cm-sec">Asignados</span>
+      <div id="cm-asignado"></div>
+    </div>
+    <span class="field-label cm-sec">Etiquetas</span>
+    <div class="cm-labels" id="cm-labels"></div>
+    <label class="field-label cm-sec" for="cm-desc">Descripción</label>
+    <textarea class="ctl" id="cm-desc" placeholder="Brief, links, referencias, lo que pidió el cliente..."></textarea>
+    <span class="field-label cm-sec">Checklist <span id="cm-cl-count"></span></span>
+    <div class="cl-bar" id="cm-cl-bar"><span></span></div>
+    <div id="cm-checklist"></div>
+    <div class="cl-add" id="cm-cl-addrow">
+      <input class="ctl" type="text" id="cm-cl-new" placeholder="Agregar un ítem y Enter" aria-label="Nuevo ítem del checklist" maxlength="160">
+    </div>
+    <span class="field-label cm-sec">Adjuntos <span id="cm-at-count"></span></span>
+    <div id="cm-attach"></div>
+    <div class="at-add" id="cm-at-addrow">
+      <input class="ctl" type="text" id="cm-at-link" placeholder="Pegá un link (Drive, Figma…) y Enter" aria-label="Agregar link" maxlength="500">
+      <button type="button" class="btn secondary sm" id="cm-at-pick">Subir archivos</button>
+      <input type="file" id="cm-at-file" multiple hidden>
+    </div>
+    <p class="at-hint" id="cm-at-hint"></p>
+    <details class="cm-more">
+      <summary>Más detalles</summary>
+      <div class="cm-grid">
+        <div class="field"><label class="field-label" for="cm-tipo">Tipo de entregable</label><select class="ctl" id="cm-tipo">
+          <option value="">Sin definir</option><option>Contenido</option><option>Diseño</option><option>Video</option><option>Copy</option><option>Publicidad</option><option>Web</option><option>Otro</option>
+        </select></div>
+        <div class="field"><label class="field-label" for="cm-aprobacion">Aprobación</label><select class="ctl" id="cm-aprobacion">
+          <option value="">No requiere</option><option>Pendiente</option><option>Enviado al cliente</option><option>Aprobado</option><option>Con cambios</option>
+        </select></div>
+      </div>
+    </details>
+    <div class="day-modal-foot cm-foot">
+      <button type="button" class="btn danger sm" id="cm-del">Eliminar tarjeta</button>
+      <span class="cm-saved" id="cm-saved" aria-live="polite">Guardado ✓</span>
+    </div>
+  </div>
+</div>
+
+<div class="day-modal-backdrop" id="board-modal-backdrop">
+  <div class="day-modal" role="dialog" aria-modal="true" aria-labelledby="bm-head">
+    <div class="day-modal-head">
+      <h2 id="bm-head">Nuevo tablero</h2>
+      <button type="button" id="bm-close" class="icon-btn" aria-label="Cerrar">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>
+      </button>
+    </div>
+    <div class="frow">
+      <div class="field wide"><label class="field-label" for="bm-title">Nombre del tablero</label><input class="ctl" type="text" id="bm-title" placeholder="Ej: Contenido de octubre" maxlength="80"></div>
+      <div class="field wide"><label class="field-label" for="bm-cliente">Cliente</label><select class="ctl" id="bm-cliente"></select></div>
+    </div>
+    <div class="frow mt">
+      <button type="button" class="btn sm" id="bm-save">Guardar</button>
+      <button type="button" class="btn secondary sm" id="bm-cancel">Cancelar</button>
+      <button type="button" class="btn danger sm" id="bm-del" style="margin-left:auto;" hidden>Eliminar tablero</button>
+    </div>
+  </div>
+</div>
+
+<div id="cover">
+  <div class="cover-inner">
+    <svg class="obox-hero" viewBox="0 0 64 64" aria-hidden="true"><use href="#obox-mark"/></svg>
+    <p class="eyebrow" id="fecha-hoy"></p>
+    <h1 id="saludo">Hola.</h1>
+    <p class="motiv" id="motiv-msg"></p>
+    <p class="streak-badge" id="streak-badge" hidden></p>
+    <div class="cover-stats" id="cover-stats"></div>
+
+    <div class="card">
+      <div class="section-head"><h2>Daily de hoy</h2></div>
+      <p class="daily-intro">Para empezar el día, contá qué hiciste ayer y qué vas a hacer hoy. Los administradores pueden ver tu Daily.</p>
+      <label class="daily-q" for="d-ayer">¿Qué hice ayer? <span class="req">*</span></label>
+      <textarea class="ctl" id="d-ayer" placeholder="Lo que avancé o cerré..."></textarea>
+      <label class="daily-q" for="d-hoy">¿Qué voy a hacer hoy? <span class="req">*</span></label>
+      <textarea class="ctl" id="d-hoy" placeholder="Mi Top 3 y lo importante..."></textarea>
+      <label class="daily-q" for="d-bloqueos">¿Qué me está frenando? <span class="opt">(opcional)</span></label>
+      <textarea class="ctl" id="d-bloqueos" placeholder="Lo que espera a un cliente, una aprobación, o a mí..."></textarea>
+      <span class="daily-q" id="energy-label">Energía</span>
+      <div class="energy-row" id="energy-row" role="group" aria-labelledby="energy-label">
+        <button type="button" class="energy-opt" data-v="😴 Baja" aria-pressed="false">Baja</button>
+        <button type="button" class="energy-opt" data-v="🙂 Normal" aria-pressed="false">Normal</button>
+        <button type="button" class="energy-opt" data-v="🔥 A full" aria-pressed="false">A full</button>
+      </div>
+      <div class="mt"><button type="button" class="btn block" id="btn-daily-save">Guardar Daily de hoy</button></div>
+      <details class="daily-hist"><summary>Ver días anteriores</summary><div id="daily-history"></div></details>
+    </div>
+
+    <button type="button" class="btn cover-cta" id="btn-enter-app" disabled><span id="enter-label">Ir a mis tareas</span> <span class="arrow">→</span></button>
+    <p class="daily-gate-hint" id="daily-gate-hint" role="status" aria-live="polite"></p>
+  </div>
+</div>
+
+<div id="app" hidden>
+<div class="wrap">
+  <header class="top-bar">
+    <div class="brand">
+      <svg class="brand-mark" viewBox="0 0 64 64" aria-hidden="true"><use href="#obox-mark"/></svg>
+      <div class="brand-text"><span class="brand-name">obox</span>
+      <p class="sync-note" role="status"><span class="dot off" id="sync-dot"></span><span id="sync-text">Conectando…</span></p></div>
+    </div>
+    <div class="top-actions">
+      <button type="button" class="icon-btn theme-toggle" id="btn-theme" aria-label="Cambiar entre tema claro y oscuro" title="Tema claro / oscuro"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></svg></button>
+      <button type="button" class="icon-btn" id="btn-push" aria-label="Activar avisos en este celular" title="Avisos al celular" hidden>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg>
+      </button>
+      <div class="me-chip" id="me-chip" hidden></div>
+      <button type="button" id="btn-signout" class="icon-btn" aria-label="Cerrar sesión" title="Cerrar sesión" hidden>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="M16 17l5-5-5-5"/><path d="M21 12H9"/></svg>
+      </button>
+      <button type="button" id="btn-cover-back" class="icon-btn" aria-label="Volver a la portada" title="Portada">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 11l9-8 9 8"/><path d="M5 10v10h14V10"/></svg>
+      </button>
+      <button type="button" id="btn-sidebar-toggle" class="btn btn-new" aria-expanded="true" aria-controls="sidebar">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>
+        <span id="toggle-label">Cerrar</span>
+      </button>
+    </div>
+  </header>
+
+  <div class="today-strip" aria-label="Resumen de hoy">
+    <div class="ts-main">
+      <p class="ts-date" id="ts-date"></p>
+      <p class="ts-line" id="ts-line"></p>
+    </div>
+    <div class="ts-progress" id="ts-bar" role="progressbar" aria-label="Avance de hoy" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><span id="ts-fill"></span></div>
+  </div>
+
+  <div class="layout">
+    <aside class="sidebar" id="sidebar" aria-label="Nueva tarea">
+      <form class="card" id="add-form" autocomplete="off">
+        <div class="section-head"><h2>Nueva tarea</h2></div>
+        <div class="frow">
+          <div class="field wide">
+            <label class="field-label" for="f-tarea">Tarea</label>
+            <input class="ctl" type="text" id="f-tarea" placeholder="¿Qué hay que hacer?" maxlength="200">
+          </div>
+          <div class="field">
+            <label class="field-label" for="f-cliente">Cliente</label>
+            <select class="ctl" id="f-cliente"></select>
+          </div>
+          <div class="field">
+            <label class="field-label" for="f-estado">Estado</label>
+            <select class="ctl" id="f-estado">
+              <option value="Por hacer">Por hacer</option><option value="En curso">En curso</option><option value="Espera de respuesta">Espera de respuesta</option>
+            </select>
+          </div>
+          <div class="field">
+            <label class="field-label" for="f-prioridad">Prioridad</label>
+            <select class="ctl" id="f-prioridad">
+              <option value="Alta">Alta</option><option value="Media" selected>Media</option><option value="Baja">Baja</option>
+            </select>
+          </div>
+          <div class="field">
+            <label class="field-label" for="f-fecha">Fecha</label>
+            <input class="ctl" type="date" id="f-fecha">
+          </div>
+          <div class="field wide" id="f-asignado-wrap" hidden>
+            <span class="field-label">Asignar a</span>
+            <div id="f-asignado"></div>
+          </div>
+        </div>
+        <div class="mt"><label class="check"><input type="checkbox" id="f-top3"> Marcar como Top 3</label></div>
+        <div class="mt"><button type="submit" class="btn block" id="btn-add">Agregar tarea</button></div>
+      </form>
+    </aside>
+
+    <main class="main-col">
+      <div class="toolbar">
+        <div class="view-switch" id="view-switch" role="tablist" aria-label="Vistas"></div>
+        <div class="search" id="search-wrap">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>
+          <input class="ctl" type="search" id="search" placeholder="Buscar tarea…" aria-label="Buscar tarea" autocomplete="off">
+        </div>
+      </div>
+      <div class="filter-row">
+        <div class="client-chips" id="client-chips" role="group" aria-label="Filtrar por cliente"></div>
+        <button type="button" class="client-chip mine" id="only-mine" aria-pressed="false" hidden>Solo mis tareas</button>
+      </div>
+
+      <div id="view-board">
+        <div class="card setup-hint" id="setup-hint" hidden>
+          <strong>Empezá cargando tu agenda.</strong> Todavía no hay clientes. Podés importar tu copia anterior o agregar los clientes a mano, en Equipo.
+          <div class="frow mt"><button type="button" class="btn sm" id="btn-goto-team">Ir a Equipo</button></div>
+        </div>
+        <div class="main-sections">
+          <section class="sec-top3"><div class="section-head"><h2><span class="ic ic-top3"></span>Top 3</h2><span class="count" id="c-top3">0</span></div><div class="list" id="list-top3"></div></section>
+          <section class="sec-late"><div class="section-head"><h2><span class="ic ic-late"></span>Atrasadas</h2><span class="count" id="c-atrasadas">0</span></div><div class="list" id="list-atrasadas"></div></section>
+          <section class="sec-today"><div class="section-head"><h2><span class="ic ic-today"></span>Hoy</h2><span class="count" id="c-hoy">0</span></div><div class="list" id="list-hoy"></div></section>
+          <section class="sec-tmrw"><div class="section-head"><h2><span class="ic ic-tmrw"></span>Mañana</h2><span class="count" id="c-manana">0</span></div><div class="list" id="list-manana"></div></section>
+          <section class="sec-wait"><div class="section-head"><h2><span class="ic ic-wait"></span>Espera de respuesta</h2><span class="count" id="c-espera">0</span></div><div class="list" id="list-espera"></div></section>
+          <section><div class="section-head"><h2><span class="ic ic-rest"></span>Todo lo demás</h2><span class="count" id="c-resto">0</span></div><div class="list" id="list-resto"></div></section>
+
+          <div class="closed-wrap">
+            <details id="closed-wrap">
+              <summary class="closed-summary">Tareas cerradas <span class="count" id="c-cerradas">0</span></summary>
+              <div class="list" id="list-cerradas"></div>
+            </details>
+          </div>
+        </div>
+      </div>
+
+      <div id="view-calendar" hidden>
+        <div class="cal-header">
+          <button type="button" class="icon-btn" id="cal-prev" aria-label="Mes anterior"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 6l-6 6 6 6"/></svg></button>
+          <h2 id="cal-title">—</h2>
+          <button type="button" class="icon-btn" id="cal-next" aria-label="Mes siguiente"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg></button>
+          <button type="button" class="btn secondary sm" id="cal-today" style="margin-left:auto;">Hoy</button>
+        </div>
+        <div class="cal-grid" id="cal-grid"></div>
+      </div>
+
+      <div id="view-boards" hidden><div id="boards-root"></div></div>
+
+      <div id="view-team" hidden><div id="team-root" class="team-root"></div></div>
+
+      <div id="view-week" hidden>
+        <div class="card">
+          <div class="section-head"><h2 id="week-title">Esta semana</h2></div>
+          <p class="week-stats" id="week-stats"></p>
+          <label class="field-label" for="week-meta">Meta de la semana</label>
+          <input class="ctl" type="text" id="week-meta" placeholder="2 o 3 cosas grandes, no tareas sueltas...">
+          <div class="mt"><button type="button" class="btn sm" id="btn-week-meta-save">Guardar meta</button></div>
+        </div>
+        <div class="card">
+          <div class="section-head"><h2>Retro (viernes)</h2></div>
+          <label class="daily-q" for="week-bien">¿Qué salió bien?</label>
+          <textarea class="ctl" id="week-bien" placeholder="Lo que funcionó..."></textarea>
+          <label class="daily-q" for="week-trabo">¿Qué se trabó?</label>
+          <textarea class="ctl" id="week-trabo" placeholder="Lo que costó o se frenó..."></textarea>
+          <label class="daily-q" for="week-cambio">¿Qué cambio para la próxima?</label>
+          <textarea class="ctl" id="week-cambio" placeholder="Un ajuste concreto..."></textarea>
+          <div class="mt"><button type="button" class="btn" id="btn-week-retro-save">Guardar retro</button></div>
+          <details class="daily-hist"><summary>Ver semanas anteriores</summary><div id="week-history"></div></details>
+        </div>
+      </div>
+
+      <div class="footer-row">
+        <span id="racha-txt">Sin tareas cerradas todavía</span>
+        <button type="button" id="btn-reset">Borrar todos los datos</button>
+      </div>
+    </main>
+  </div>
+</div>
+</div>
+
+
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-storage-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-messaging-compat.js"></script>
+<script src="firebase-config.js"></script>
+<script src="app.js"></script>
+<script src="app-v8.js"></script>
+</body>
+</html>

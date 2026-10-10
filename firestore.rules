@@ -1,0 +1,191 @@
+rules_version = '2';
+
+// Reglas de seguridad de la agenda.
+// ANTES DE PUBLICAR: cambiá TU_EMAIL@gmail.com (una sola vez, abajo) por el Gmail con el que vas a entrar como dueño.
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    /* ---------- Quién es quién ---------- */
+    function signedIn() { return request.auth != null; }
+
+    function isOwner() {
+      return signedIn()
+        && request.auth.token.email_verified == true
+        && request.auth.token.email == 'TU_EMAIL@gmail.com';
+    }
+    function memberPath() { return /databases/$(database)/documents/members/$(request.auth.uid); }
+    function hasMember()  { return signedIn() && exists(memberPath()); }
+    function me()         { return get(memberPath()).data; }
+
+    function isAdmin()  { return isOwner() || (hasMember() && me().get('role', '') == 'admin'); }
+    function isMember() { return isOwner() || hasMember(); }
+
+    // Miembro (no admin) que tiene asignado este cliente.
+    function seesC(cliente) {
+      return hasMember()
+        && (me().get('all', false) == true || cliente in me().get('clients', []));
+    }
+    // Miembro con permiso de edición (no "solo lectura") sobre este cliente.
+    function writesC(cliente) {
+      return hasMember() && me().get('role', '') == 'member' && seesC(cliente);
+    }
+
+    /* ---------- Tareas, tableros y tarjetas: por cliente ---------- */
+    match /tasks/{id} {
+      allow read:   if isAdmin() || seesC(resource.data.cliente);
+      allow create: if (isAdmin() && request.resource.data.cliente is string)
+                    || (writesC(request.resource.data.cliente)
+                        && request.resource.data.titulo is string
+                        && request.resource.data.titulo.size() <= 200);
+      allow update: if isAdmin()
+                    || (writesC(resource.data.cliente)
+                        && writesC(request.resource.data.cliente)
+                        && request.resource.data.titulo is string
+                        && request.resource.data.titulo.size() <= 200);
+      allow delete: if isAdmin() || writesC(resource.data.cliente);
+    }
+    match /campaigns/{id} {
+      allow read: if isAdmin() || seesC(resource.data.cliente);
+      allow create: if (isAdmin() && request.resource.data.cliente is string) || writesC(request.resource.data.cliente);
+      allow update: if isAdmin() || (writesC(resource.data.cliente) && request.resource.data.cliente == resource.data.cliente);
+      allow delete: if isAdmin() || writesC(resource.data.cliente);
+    }
+
+    match /boards/{id} {
+      allow read:   if isAdmin() || seesC(resource.data.cliente);
+      allow create: if (isAdmin() && request.resource.data.cliente is string)
+                    || writesC(request.resource.data.cliente);
+      allow update: if isAdmin()
+                    || (writesC(resource.data.cliente)
+                        && request.resource.data.cliente == resource.data.cliente);
+      allow delete: if isAdmin() || writesC(resource.data.cliente);
+    }
+    match /cards/{id} {
+      allow read:   if isAdmin() || seesC(resource.data.cliente);
+      // La tarjeta debe ser del mismo cliente que su tablero.
+      allow create: if (isAdmin() && request.resource.data.cliente is string)
+                    || (writesC(request.resource.data.cliente)
+                        && get(/databases/$(database)/documents/boards/$(request.resource.data.boardId)).data.cliente
+                           == request.resource.data.cliente);
+      allow update: if isAdmin()
+                    || (writesC(resource.data.cliente)
+                        && request.resource.data.cliente == resource.data.cliente);
+      allow delete: if isAdmin() || writesC(resource.data.cliente);
+    }
+
+    // Archivos chicos adjuntos (modo gratis): el contenido vive aparte para no cargar todo al abrir un tablero.
+    match /blobs/{id} {
+      allow read:   if isAdmin() || seesC(resource.data.cliente);
+      allow create: if request.resource.data.keys().hasOnly(['cliente', 'cardId', 'name', 'type', 'data', 'at'])
+                    && request.resource.data.data is string
+                    && request.resource.data.data.size() < 1000000
+                    && request.resource.data.cliente is string
+                    && (isAdmin()
+                        || (writesC(request.resource.data.cliente)
+                            && get(/databases/$(database)/documents/cards/$(request.resource.data.cardId)).data.cliente
+                               == request.resource.data.cliente));
+      allow update: if false;
+      allow delete: if isAdmin() || writesC(resource.data.cliente);
+    }
+
+    /* ---------- Clientes y configuración: los ve el equipo, los cambia un admin ---------- */
+    match /clients/{id} {
+      allow read:  if isMember();
+      allow write: if isAdmin();
+    }
+    match /meta/{id} {
+      allow read:  if isMember();
+      allow write: if isAdmin();
+    }
+
+    /* ---------- Eventos del calendario (no son tareas) ---------- */
+    // Cada evento lo ve: su dueño, todo el equipo (visib 'todos') o las personas elegidas (visib 'personas').
+    // Un evento "solo yo" no lo lee nadie más, ni los administradores.
+    match /events/{id} {
+      allow read:   if isMember()
+                    && (resource.data.owner == request.auth.uid
+                        || resource.data.visib == 'todos'
+                        || request.auth.uid in resource.data.get('invitados', []));
+      allow create: if isMember() && request.resource.data.owner == request.auth.uid
+                    && request.resource.data.titulo is string
+                    && request.resource.data.titulo.size() <= 200
+                    && request.resource.data.visib in ['yo', 'todos', 'personas']
+                    && request.resource.data.get('invitados', []).size() <= 30;
+      allow update: if isMember() && resource.data.owner == request.auth.uid
+                    && request.resource.data.owner == request.auth.uid
+                    && request.resource.data.titulo is string
+                    && request.resource.data.titulo.size() <= 200
+                    && request.resource.data.visib in ['yo', 'todos', 'personas']
+                    && request.resource.data.get('invitados', []).size() <= 30;
+      allow delete: if isMember() && (resource.data.owner == request.auth.uid
+                    || (isAdmin() && resource.data.visib == 'todos'));
+    }
+
+    /* ---------- Equipo ---------- */
+    // La ficha de cada persona: ella puede leer la suya; el equipo lee todas.
+    // Solo el dueño crea admins. Un admin común administra miembros y "solo lectura".
+    match /members/{uid} {
+      allow read: if signedIn() && (request.auth.uid == uid || isMember());
+
+      allow create: if isOwner()
+                    || (isAdmin()
+                        && request.resource.data.role in ['member', 'viewer']
+                        && !('owner' in request.resource.data));
+
+      allow update: if isOwner()
+                    || (isAdmin()
+                        && resource.data.role in ['member', 'viewer']
+                        && request.resource.data.role in ['member', 'viewer']
+                        && !('owner' in request.resource.data));
+
+      allow delete: if (isOwner() && resource.data.get('owner', false) != true)
+                    || (isAdmin() && resource.data.role in ['member', 'viewer']);
+    }
+
+    // Pedidos de acceso: cada persona escribe el suyo; los admins los leen y los borran.
+    match /requests/{uid} {
+      allow read:   if signedIn() && (request.auth.uid == uid || isAdmin());
+      allow create, update: if signedIn() && request.auth.uid == uid
+                            && request.resource.data.keys().hasOnly(['name', 'photo', 'email', 'at'])
+                            && request.resource.data.name is string
+                            && request.resource.data.name.size() <= 200
+                            && request.resource.data.email == request.auth.token.email
+                            && request.resource.data.at is number
+                            && request.resource.data.photo is string
+                            && request.resource.data.photo.size() < 2048;
+      allow delete: if signedIn() && (request.auth.uid == uid || isAdmin());
+    }
+
+    // Nombre, foto y personalización (nombre elegido, carita, color), visibles para el equipo.
+    match /users/{uid} {
+      allow read:  if signedIn() && (request.auth.uid == uid || isMember());
+      allow create, update: if isMember() && request.auth.uid == uid
+                   && request.resource.data.keys().hasOnly(['name', 'photo', 'nick', 'emoji', 'color', 'pic', 'avMode'])
+                   && request.resource.data.name is string
+                   && request.resource.data.get('nick', '') is string
+                   && request.resource.data.get('nick', '').size() <= 40
+                   && request.resource.data.get('emoji', '') is string
+                   && request.resource.data.get('emoji', '').size() <= 16
+                   && request.resource.data.get('color', '') is string
+                   && request.resource.data.get('color', '').size() <= 9
+                   && request.resource.data.get('avMode', 'google') in ['google', 'pic', 'emoji']
+                   && request.resource.data.get('pic', '') is string
+                   && request.resource.data.get('pic', '').size() < 40000
+                   && (request.resource.data.get('pic', '') == '' || request.resource.data.get('pic', '').matches('data:image/.*'))
+                   && request.resource.data.name.size() <= 100
+                   && request.resource.data.photo is string
+                   && (request.resource.data.photo == '' || request.resource.data.photo.matches('https://.*'))
+                   && request.resource.data.photo.size() < 2048;
+      allow delete: if signedIn() && request.auth.uid == uid;
+
+      // Tu Daily, tu Semana y los tokens de aviso de tu celular: solo vos (y solo si ya sos parte del equipo).
+      match /{coleccion}/{doc} {
+        allow read, write: if isMember() && request.auth.uid == uid
+                           && coleccion in ['daily', 'weekly', 'tokens'];
+        // Los administradores pueden LEER el Daily de todo el equipo (no pueden editarlo).
+        allow read: if isAdmin() && coleccion == 'daily';
+      }
+    }
+  }
+}

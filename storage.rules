@@ -1,0 +1,26 @@
+rules_version = '2';
+
+// Reglas de Firebase Storage (solo si activás "Archivos grandes", ver LEEME).
+// Cada archivo vive en adjuntos/{idDeTarjeta}/... y los permisos se toman de la tarjeta y de la ficha del equipo en Firestore.
+
+service firebase.storage {
+  match /b/{bucket}/o {
+    function fsDoc(path) { return firestore.get(/databases/(default)/documents/$(path)); }
+    function member()    { return fsDoc('members/' + request.auth.uid).data; }
+    function hasMember() { return request.auth != null && firestore.exists(/databases/(default)/documents/members/$(request.auth.uid)); }
+    function sees(cliente) {
+      return hasMember() && (member().role == 'admin' || member().get('all', false) == true || cliente in member().get('clients', []));
+    }
+    function edits(cliente) {
+      return hasMember() && (member().role == 'admin' || (member().role == 'member' && sees(cliente)));
+    }
+    function cardCliente(cardId) { return fsDoc('cards/' + cardId).data.cliente; }
+
+    match /adjuntos/{cardId}/{file} {
+      allow read:   if sees(cardCliente(cardId));
+      allow create: if edits(cardCliente(cardId)) && request.resource.size < 25 * 1024 * 1024;
+      allow update: if false;
+      allow delete: if edits(cardCliente(cardId));
+    }
+  }
+}

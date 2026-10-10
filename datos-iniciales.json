@@ -1,0 +1,341 @@
+{
+ "version": 1,
+ "exportedAt": "2026-10-07",
+ "clients": {
+  "Aisushi": {
+   "color": "#CC3A49",
+   "name": "Aisushi",
+   "orden": 2
+  },
+  "Adrian": {
+   "color": "#7E3FCB",
+   "name": "Adrian",
+   "orden": 4
+  },
+  "Interno": {
+   "color": "#6B6759",
+   "name": "Interno",
+   "orden": 6
+  },
+  "Dimarco": {
+   "color": "#15875A",
+   "name": "Dimarco",
+   "orden": 1
+  },
+  "West": {
+   "color": "#2569A8",
+   "name": "West",
+   "orden": 0
+  },
+  "Calma": {
+   "color": "#C93F82",
+   "name": "Calma",
+   "orden": 5
+  },
+  "Poke": {
+   "color": "#B85A0B",
+   "name": "Poke",
+   "orden": 3
+  }
+ },
+ "tasks": {
+  "hb12qvl5zroir7t9l7uf": {
+   "cliente": "Aisushi",
+   "estado": "Hecho",
+   "fecha": "2026-09-28",
+   "orden": 0,
+   "prioridad": "Media",
+   "titulo": "Portada web",
+   "top3": false
+  },
+  "t082lqdhpe34kx60z9jh": {
+   "cliente": "Dimarco",
+   "estado": "Hecho",
+   "fecha": "2026-09-23",
+   "prioridad": "Alta",
+   "titulo": "Sticker Dimarco",
+   "top3": true
+  },
+  "i0rba26jk0y2z391aj7v": {
+   "cliente": "Dimarco",
+   "estado": "Por hacer",
+   "fecha": "2026-11-15",
+   "orden": 1790954132673,
+   "prioridad": "Alta",
+   "titulo": "Rispoli day",
+   "top3": false
+  },
+  "jzus46p10fa5d66wzkcw": {
+   "cliente": "Adrian",
+   "estado": "Hecho",
+   "fecha": "2026-09-29",
+   "orden": 10,
+   "prioridad": "Media",
+   "titulo": "Antes y despues",
+   "top3": false
+  },
+  "owgqkf5gkd0p340y1ixv": {
+   "cliente": "Dimarco",
+   "estado": "Por hacer",
+   "fecha": "2027-02-06",
+   "orden": 1790954185979,
+   "prioridad": "Alta",
+   "titulo": "Los andes",
+   "top3": false
+  },
+  "yhk1r6uushnjuzdhvfi0": {
+   "cliente": "Adrian",
+   "estado": "Por hacer",
+   "fecha": "2026-10-02",
+   "orden": 1790523881746,
+   "prioridad": "Media",
+   "titulo": "Manual o electrico",
+   "top3": false
+  },
+  "bpuxj1zr1dwpfoo32hy0": {
+   "cliente": "West",
+   "estado": "Hecho",
+   "fecha": "2026-09-23",
+   "prioridad": "Media",
+   "titulo": "Si",
+   "top3": false
+  },
+  "r2hdwe2nz0t8byqm7cee": {
+   "cliente": "Dimarco",
+   "estado": "Por hacer",
+   "fecha": "2026-10-13",
+   "orden": 1790615799908,
+   "prioridad": "Media",
+   "titulo": "Carrete",
+   "top3": false
+  },
+  "giju0b253qf2pts6zj2a": {
+   "cliente": "Aisushi",
+   "estado": "Hecho",
+   "fecha": "2026-09-25",
+   "prioridad": "Media",
+   "titulo": "Carrete aisu post prima",
+   "top3": false
+  },
+  "elyc92zmnvlvi3csv2lp": {
+   "cliente": "Dimarco",
+   "estado": "Hecho",
+   "fecha": "2026-09-30",
+   "orden": 1790615709911,
+   "prioridad": "Media",
+   "titulo": "Story evento golf",
+   "top3": false
+  },
+  "rashvn2vivr3yx2ss8ed": {
+   "cliente": "Interno",
+   "estado": "Hecho",
+   "fecha": "2026-09-22",
+   "prioridad": "Baja",
+   "titulo": "Ordenar trello",
+   "top3": false
+  },
+  "zsit2qpr5afq2ngcknit": {
+   "cliente": "Dimarco",
+   "estado": "Por hacer",
+   "fecha": "2026-11-21",
+   "orden": 1790954201207,
+   "prioridad": "Alta",
+   "titulo": "Aconcagua",
+   "top3": false
+  },
+  "fe8nxf293v93jx9fx8qp": {
+   "cliente": "Dimarco",
+   "estado": "Por hacer",
+   "fecha": "2026-11-07",
+   "orden": 1790954161522,
+   "prioridad": "Alta",
+   "titulo": "Black fitness",
+   "top3": false
+  },
+  "i7n8d6nbax7fiidssdoe": {
+   "cliente": "Poke",
+   "estado": "Hecho",
+   "fecha": "2026-09-28",
+   "orden": 10,
+   "prioridad": "Media",
+   "titulo": "Video dia del Poke",
+   "top3": false
+  },
+  "t42pjo30euthur84qnxm": {
+   "cliente": "Poke",
+   "estado": "Hecho",
+   "fecha": "2026-09-28",
+   "orden": 20,
+   "prioridad": "Media",
+   "titulo": "2 Placa",
+   "top3": false
+  },
+  "gzykqpts7prz1yhuxma9": {
+   "cliente": "Adrian",
+   "estado": "Hecho",
+   "fecha": "2026-09-30",
+   "orden": 1790523834326,
+   "prioridad": "Media",
+   "titulo": "Precio",
+   "top3": false
+  },
+  "x9fxvpgxblr1122wd28u": {
+   "cliente": "Poke",
+   "estado": "Hecho",
+   "fecha": "2026-09-25",
+   "prioridad": "Media",
+   "titulo": "Video presentacion Poke",
+   "top3": false
+  },
+  "sol2hpbxq2cj4rpqc4i3": {
+   "cliente": "Adrian",
+   "estado": "Hecho",
+   "fecha": "2026-09-23",
+   "prioridad": "Media",
+   "titulo": "Diente faltante",
+   "top3": false
+  },
+  "2yogucwovgrgfueqrkm9": {
+   "cliente": "Dimarco",
+   "doneAt": 1791392320783,
+   "estado": "Por hacer",
+   "estadoPrev": "Por hacer",
+   "fecha": "2026-10-05",
+   "notas": "",
+   "orden": 1790615783649,
+   "prioridad": "Media",
+   "titulo": "Carrete",
+   "top3": false
+  },
+  "i5lb6wli66u1lgs5q4zv": {
+   "cliente": "Dimarco",
+   "estado": "Por hacer",
+   "fecha": "2026-10-28",
+   "orden": 1790615822866,
+   "prioridad": "Media",
+   "titulo": "Carrete",
+   "top3": false
+  },
+  "jm25soha1ij7zrp9boo4": {
+   "cliente": "Dimarco",
+   "estado": "Hecho",
+   "fecha": "2026-09-28",
+   "orden": 0,
+   "prioridad": "Media",
+   "titulo": "Carrete",
+   "top3": false
+  },
+  "nu3ny2n07x0olvioa7k1": {
+   "cliente": "Adrian",
+   "estado": "Por hacer",
+   "fecha": "2026-10-01",
+   "notas": "",
+   "orden": 1790523864559,
+   "prioridad": "Media",
+   "titulo": "Trayectoria",
+   "top3": false
+  },
+  "55xou5oeyo2fffpayqfy": {
+   "cliente": "Adrian",
+   "estado": "Hecho",
+   "fecha": "2026-09-22",
+   "prioridad": "Baja",
+   "titulo": "Subir videos y copy al drive",
+   "top3": false
+  },
+  "dlbyu0fepiokxoqo3qii": {
+   "cliente": "Calma",
+   "estado": "Hecho",
+   "fecha": "2026-09-21",
+   "prioridad": "Alta",
+   "titulo": "Flyer Zac",
+   "top3": false
+  },
+  "fcpw5f2kotpk6wpnvub2": {
+   "cliente": "Dimarco",
+   "estado": "Hecho",
+   "fecha": "2026-09-28",
+   "orden": 1790615765640,
+   "prioridad": "Media",
+   "titulo": "Cartel golf",
+   "top3": true
+  },
+  "gdgk6k5cs4au6iuhb1jl": {
+   "cliente": "Adrian",
+   "estado": "Hecho",
+   "fecha": "2026-09-25",
+   "prioridad": "Media",
+   "titulo": "Restauracion",
+   "top3": false
+  },
+  "tt55zyeacak461nif5bc": {
+   "cliente": "Adrian",
+   "estado": "Hecho",
+   "fecha": "2026-09-22",
+   "prioridad": "Media",
+   "titulo": "Video retenedores",
+   "top3": false
+  },
+  "drkoo6bx03t4ugqh5nrw": {
+   "cliente": "Poke",
+   "estado": "Hecho",
+   "fecha": "2026-09-23",
+   "prioridad": "Media",
+   "titulo": "Gift poke",
+   "top3": false
+  },
+  "6w0ahdl9ecas0p2jmexk": {
+   "cliente": "Dimarco",
+   "estado": "Hecho",
+   "fecha": "2026-09-21",
+   "prioridad": "Alta",
+   "titulo": "Sticker golf",
+   "top3": true
+  },
+  "08tmfa5ndzj7rhhvx83r": {
+   "cliente": "Dimarco",
+   "estado": "Por hacer",
+   "fecha": "2026-10-20",
+   "orden": 1790615812271,
+   "prioridad": "Media",
+   "titulo": "Carrete",
+   "top3": false
+  },
+  "5reztuhd2660m3pk8dd2": {
+   "cliente": "Adrian",
+   "estado": "Hecho",
+   "fecha": "2026-09-28",
+   "orden": 1790523806199,
+   "prioridad": "Media",
+   "titulo": "Consultorio",
+   "top3": false
+  },
+  "x6bzhm8nzxkmt49h11la": {
+   "cliente": "Calma",
+   "estado": "Hecho",
+   "fecha": "2026-09-21",
+   "prioridad": "Media",
+   "titulo": "Venti Zac",
+   "top3": true
+  }
+ },
+ "boards": {},
+ "cards": {},
+ "daily": {
+  "2026-09-25": {
+   "ayer": "Ayer cranee un par de ideas",
+   "bloqueos": "Nada",
+   "energia": "🙂 Normal",
+   "fecha": "2026-09-25",
+   "hoy": "El carrete de ai"
+  },
+  "2026-09-28": {
+   "ayer": "Todo",
+   "bloqueos": "Nada",
+   "energia": "🔥 A full",
+   "fecha": "2026-09-28",
+   "hoy": "Cartel dimarco"
+  }
+ },
+ "weekly": {}
+}
