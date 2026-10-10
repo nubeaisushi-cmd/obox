@@ -1,0 +1,11 @@
+# Solo si preferís desplegar con la terminal (npm i -g wrangler; wrangler login; wrangler deploy).
+# Si lo pegás desde el panel de Cloudflare no hace falta este archivo (LEEME, punto 23).
+name = "obox-recordatorios"
+main = "worker.js"
+compatibility_date = "2025-01-01"
+
+[triggers]
+crons = ["* * * * *"]
+
+[vars]
+APP_URL = "https://TU-SITIO.pages.dev"
