@@ -168,16 +168,45 @@ const GRACE_MS = 30 * 60 * 1000; // si el evento ya empezó hace más de 30 min,
 const LATE_MS = 10 * 60 * 1000;
 
 function intVal(n) { return { integerValue: String(Math.round(n)) }; }
+
 async function fsRunDue(ctx, now) {
   const res = await fetch(fsBase(ctx.pid) + ':runQuery', {
     method: 'POST',
-    headers: { Authorization: 'Bearer ' + ctx.at, 'Content-Type': 'application/json' },
-    body: JSON.stringify({ structuredQuery: {
-      from: [{ collectionId: 'events' }],
-      where: { fieldFilter: { field: { fieldPath: 'proximoAviso' }, op: 'LESS_THAN_OR_EQUAL', value: intVal(now) } },
-      limit: 100
-    } })
+    headers: {
+      Authorization: 'Bearer ' + ctx.at,
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({
+      structuredQuery: {
+        from: [{ collectionId: 'events' }],
+        limit: 100
+      }
+    })
   });
+
+  if (!res.ok) throw new Error('query ' + res.status);
+
+  const rows = await res.json();
+
+  return rows
+    .filter((r) => r && r.document)
+    .map((r) => fsDoc(r.document))
+    .filter((ev) => {
+      const inicio = Number(ev.inicio);
+      const enviados = Array.isArray(ev.enviados)
+        ? ev.enviados.map(Number)
+        : [];
+      const recordar = Array.isArray(ev.recordar)
+        ? ev.recordar.map(Number)
+        : [];
+
+      return inicio > 0 && recordar.some((m) =>
+        !enviados.includes(m) &&
+        inicio - m * 60000 <= now &&
+        now <= inicio + GRACE_MS
+      );
+    });
+});
   if (!res.ok) throw new Error('query ' + res.status);
   const rows = await res.json();
   return rows.filter((r) => r && r.document).map((r) => fsDoc(r.document));
