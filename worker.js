@@ -207,10 +207,6 @@ async function fsRunDue(ctx, now) {
       );
     });
 }
-  if (!res.ok) throw new Error('query ' + res.status);
-  const rows = await res.json();
-  return rows.filter((r) => r && r.document).map((r) => fsDoc(r.document));
-}
 async function fsPatchEvent(ctx, id, enviados, proximo) {
   const fields = {
     enviados: { arrayValue: { values: enviados.map(intVal) } },
