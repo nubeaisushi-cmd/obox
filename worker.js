@@ -206,7 +206,7 @@ async function fsRunDue(ctx, now) {
         now <= inicio + GRACE_MS
       );
     });
-});
+}
   if (!res.ok) throw new Error('query ' + res.status);
   const rows = await res.json();
   return rows.filter((r) => r && r.document).map((r) => fsDoc(r.document));
