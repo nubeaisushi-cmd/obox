@@ -212,7 +212,16 @@ async function destinatarios(ctx, ev) {
 }
 async function procesar(env, now) {
   const sa = getServiceAccount(env);
-  if (!sa) return { ok: false, error: 'Falta FIREBASE_SERVICE_ACCOUNT' };
+  if (!sa) {
+  return {
+    ok: false,
+    error: 'No se pudo leer FIREBASE_SERVICE_ACCOUNT',
+    diagnostico: {
+      existe: !!env.FIREBASE_SERVICE_ACCOUNT,
+      tipo: typeof env.FIREBASE_SERVICE_ACCOUNT
+    }
+  };
+}
   const origin = String(env.APP_URL || '').replace(/\/+$/, '');
   const ctx = { pid: sa.project_id, at: await getAccessToken(sa) };
   const due = await fsRunDue(ctx, now);
