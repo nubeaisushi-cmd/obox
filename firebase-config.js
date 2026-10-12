@@ -25,7 +25,7 @@ window.APP_OPTIONS = { useStorage: false };
   Pegá acá la "clave pública VAPID": Firebase → Configuración del proyecto → Cloud Messaging → Certificados push web → Generar par de claves.
   Mientras diga "PEGA_AQUI", el botón de campana avisa que falta configurar. Los avisos dentro de la app funcionan igual.
 */
-window.FCM_VAPID_KEY = "PEGA_AQUI";
+window.FCM_VAPID_KEY = "BOE2fbRiaeUGFcl9YL-fKa-UTuqsACXVZQQq_-gICbyJ5uwvp2O7PTVX6I8nrK16WxJMAll0k6xGwxZ5Tp8adZA";
 
 
 /*
