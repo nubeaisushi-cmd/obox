@@ -251,7 +251,7 @@ async function procesar(env, now) {
   const ctx = { pid: sa.project_id, at: await getAccessToken(sa) };
   const due = await fsRunDue(ctx, now);
   const eventosDebug = await fsList(ctx, 'events', 100);
-return json({
+return {
   ok: true,
   cantidadEventos: eventosDebug.length,
   muestra: eventosDebug.map(e => ({
@@ -261,7 +261,7 @@ return json({
     enviados: e.enviados,
     proximoAviso: e.proximoAviso
   }))
-});
+};
   console.log('DEBUG EVENTOS', JSON.stringify(await fsList(ctx, 'events', 100)));
   let enviados = 0;
   for (const ev of due) {
