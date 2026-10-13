@@ -250,6 +250,18 @@ async function procesar(env, now) {
   const origin = String(env.APP_URL || '').replace(/\/+$/, '');
   const ctx = { pid: sa.project_id, at: await getAccessToken(sa) };
   const due = await fsRunDue(ctx, now);
+  const eventosDebug = await fsList(ctx, 'events', 100);
+return json({
+  ok: true,
+  cantidadEventos: eventosDebug.length,
+  muestra: eventosDebug.map(e => ({
+    id: e.__id,
+    inicio: e.inicio,
+    recordar: e.recordar,
+    enviados: e.enviados,
+    proximoAviso: e.proximoAviso
+  }))
+});
   console.log('DEBUG EVENTOS', JSON.stringify(await fsList(ctx, 'events', 100)));
   let enviados = 0;
   for (const ev of due) {
