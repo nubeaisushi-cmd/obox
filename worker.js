@@ -249,10 +249,8 @@ async function procesar(env, now) {
 }
   const origin = String(env.APP_URL || '').replace(/\/+$/, '');
   const ctx = { pid: sa.project_id, at: await getAccessToken(sa) };
-  const due = await fsRunDue(ctx, now);
-};
-  console.log('DEBUG EVENTOS', JSON.stringify(await fsList(ctx, 'events', 100)));
-  let enviados = 0;
+ const due = await fsRunDue(ctx, now);
+let enviados = 0;
   for (const ev of due) {
     const inicio = Number(ev.inicio);
     const ya = Array.isArray(ev.enviados) ? ev.enviados.map(Number) : [];
