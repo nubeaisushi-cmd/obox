@@ -1676,11 +1676,11 @@ body:has(#view-boards:not([hidden])) .k-label[title=""] {
 #card-modal-backdrop #cm-desc {
   display: block !important;
   width: 100% !important;
-  height: 150px !important;
-  min-height: 150px !important;
-  max-height: none !important;
-  overflow-y: hidden !important;
-  resize: vertical !important;
+  height: 150px;
+  min-height: 150px;
+  max-height: none;
+  overflow-y: hidden;
+  resize: vertical;
   box-sizing: border-box !important;
   padding: 12px 14px !important;
   margin-bottom: 18px !important;
