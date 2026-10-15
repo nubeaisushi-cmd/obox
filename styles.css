@@ -1275,7 +1275,7 @@ body:has(#view-boards:not([hidden])) .kcol {
   overflow: hidden;
   border: 1px solid var(--line) !important;
   border-radius: 12px !important;
-  background: color-mix(in srgb, var(--surface) 88%, var(--ink) 12%) !important;
+  background: #F3F0FA !important;
   box-shadow: 0 1px 2px rgba(25, 20, 50, .08) !important;
   scroll-snap-align: start;
 }
