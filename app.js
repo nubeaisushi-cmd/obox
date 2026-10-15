@@ -73,7 +73,7 @@ const LABELS = [
   { id:'copy', name:'Copy', color:'#15875A' }, { id:'video', name:'Video', color:'#CC3A49' },
   { id:'urgente', name:'Urgente', color:'#8A6A00' }
 ];
-const MODULES = [ ['tablero','Tablero de tareas'], ['calendario','Calendario'], ['tableros','Trello'], ['semana','Semana y retro'] ];
+const MODULES = [ ['tablero','Tablero de tareas'], ['calendario','Calendario'], ['Trello','Trello'], ['semana','Semana y retro'] ];
 const DEFAULT_COLUMNS = ['Ideas', 'En producción', 'En revisión', 'Esperando al cliente', 'Listo'];
 const ICON = {
   edit: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>',
