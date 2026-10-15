@@ -352,7 +352,18 @@ function canWriteAny(){ return writableClients().length > 0; }
 function hasModule(m){
   if (me.isAdmin) return true;
   if (!myMember) return false;
-  return !myMember.modules || myMember.modules.includes(m);
+
+  const modules = myMember.modules;
+
+  // Compatibilidad con miembros y permisos guardados anteriormente.
+  if (!Array.isArray(modules)) return true;
+
+  if (m === 'tableros') {
+    return modules.includes('tableros') ||
+           modules.includes('tableros (trello)');
+  }
+
+  return modules.includes(m);
 }
 function myRoleLabel(){ return me.isAdmin ? 'Admin' : (myMember && myMember.role === 'viewer' ? 'Solo lectura' : 'Miembro'); }
 function nameOf(uid){
