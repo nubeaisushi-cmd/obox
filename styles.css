@@ -1178,117 +1178,275 @@ body:has(#view-boards:not([hidden])) .add-card-btn:hover {
   }
 }
 
-/* ===== OBOX · Rediseño visual de tarjetas Trello ===== */
 
-.kcard {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-  padding: 16px;
-  background: var(--card, #fff);
-  border: 1px solid var(--line, #e5e7eb);
-  border-radius: 12px;
-  box-shadow: 0 2px 4px rgba(20, 30, 50, 0.06);
-  cursor: pointer;
-  transition: box-shadow 160ms ease, border-color 160ms ease,
-    transform 160ms ease;
+/* =====================================================
+   OBOX — TABLERO TIPO TRELLO
+   Rediseño de columnas, tarjetas y espacio de trabajo
+   ===================================================== */
+
+body:has(#view-boards:not([hidden])) {
+  overflow-x: hidden;
 }
 
-.kcard:hover {
-  border-color: #c5cbd5;
-  box-shadow: 0 5px 14px rgba(20, 30, 50, 0.10);
+body:has(#view-boards:not([hidden])) #app .wrap {
+  width: 100% !important;
+  max-width: none !important;
+  margin: 0 !important;
+  padding: 14px 22px 24px !important;
+}
+
+body:has(#view-boards:not([hidden])) .top-bar {
+  margin-bottom: 12px !important;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--line);
+}
+
+body:has(#view-boards:not([hidden])) .today-strip {
+  display: none !important;
+}
+
+body:has(#view-boards:not([hidden])) .layout {
+  display: block !important;
+  width: 100% !important;
+  max-width: none !important;
+}
+
+body:has(#view-boards:not([hidden])) .sidebar {
+  display: none !important;
+}
+
+body:has(#view-boards:not([hidden])) .main-col {
+  width: 100% !important;
+  max-width: none !important;
+  min-width: 0 !important;
+}
+
+body:has(#view-boards:not([hidden])) .toolbar {
+  display: flex;
+  align-items: center !important;
+  gap: 8px 16px !important;
+  margin-bottom: 14px !important;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--line);
+}
+
+body:has(#view-boards:not([hidden])) .view-switch {
+  gap: 4px;
+}
+
+body:has(#view-boards:not([hidden])) .tab-btn {
+  padding: 9px 14px 11px;
+  font-size: 14px;
+}
+
+body:has(#view-boards:not([hidden])) .filter-row {
+  margin-bottom: 12px !important;
+}
+
+/* Área de trabajo: desplazamiento horizontal como Trello */
+
+body:has(#view-boards:not([hidden])) .kanban {
+  display: flex !important;
+  align-items: flex-start !important;
+  gap: 12px !important;
+  width: 100% !important;
+  min-height: calc(100dvh - 165px);
+  padding: 8px 4px 18px !important;
+  overflow-x: auto !important;
+  overflow-y: hidden !important;
+  background: transparent !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+  scroll-snap-type: x proximity;
+  scrollbar-width: thin;
+}
+
+/* Columnas compactas, similares a las listas de Trello */
+
+body:has(#view-boards:not([hidden])) .kcol {
+  display: flex !important;
+  flex: 0 0 272px !important;
+  width: 272px !important;
+  min-width: 272px !important;
+  max-height: calc(100dvh - 185px);
+  padding: 10px !important;
+  gap: 10px !important;
+  overflow: hidden;
+  border: 1px solid var(--line) !important;
+  border-radius: 12px !important;
+  background: color-mix(in srgb, var(--surface) 88%, var(--ink) 12%) !important;
+  box-shadow: 0 1px 2px rgba(25, 20, 50, .08) !important;
+  scroll-snap-align: start;
+}
+
+body:has(#view-boards:not([hidden])) .kcol-head {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 3px 2px 8px !important;
+}
+
+body:has(#view-boards:not([hidden])) .kcol-head::before {
+  display: none !important;
+}
+
+body:has(#view-boards:not([hidden])) .col-title-input {
+  flex: 1 1 auto;
+  min-width: 0;
+  padding: 5px 7px;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--ink);
+  font-size: 14px;
+  font-weight: 700;
+}
+
+body:has(#view-boards:not([hidden])) .col-title-input:focus {
+  border-color: var(--accent);
+  background: var(--surface);
+}
+
+body:has(#view-boards:not([hidden])) .kcol-tools {
+  display: flex;
+  align-items: center;
+  gap: 1px;
+}
+
+body:has(#view-boards:not([hidden])) .kcol-cards {
+  display: flex !important;
+  flex: 1 1 auto;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 8px !important;
+  min-height: 18px;
+  padding: 1px 2px 4px;
+  overflow-x: hidden;
+  overflow-y: auto;
+  scrollbar-width: thin;
+}
+
+body:has(#view-boards:not([hidden])) .kcol-cards.over {
+  background: var(--accent-soft);
+  border-radius: 8px;
+}
+
+/* Tarjetas: blancas, separadas y fáciles de leer */
+
+body:has(#view-boards:not([hidden])) .kcard {
+  display: flex !important;
+  flex-direction: column;
+  gap: 9px !important;
+  width: 100%;
+  padding: 11px 12px !important;
+  border: 1px solid var(--line-soft) !important;
+  border-radius: 8px !important;
+  background: var(--card-bg) !important;
+  color: var(--ink);
+  box-shadow: 0 1px 2px rgba(25, 20, 50, .10) !important;
+  cursor: pointer;
+  transition: box-shadow .15s ease, border-color .15s ease,
+    transform .15s ease;
+}
+
+body:has(#view-boards:not([hidden])) .kcard:hover {
+  border-color: var(--ink-faint) !important;
+  box-shadow: 0 3px 7px rgba(25, 20, 50, .14) !important;
   transform: translateY(-1px);
 }
 
-.kcard:focus-visible {
-  outline: 2px solid var(--accent, #6478d3);
-  outline-offset: 2px;
-}
-
-.kcard.dragging {
-  opacity: 0.45;
+body:has(#view-boards:not([hidden])) .kcard.dragging {
+  opacity: .45;
   transform: rotate(1deg);
 }
 
-.k-labels {
+body:has(#view-boards:not([hidden])) .k-labels {
   display: flex;
   flex-wrap: wrap;
-  align-items: center;
-  gap: 5px;
+  gap: 4px;
 }
 
-.k-label {
+body:has(#view-boards:not([hidden])) .k-label {
   display: inline-block;
   min-width: 38px;
-  max-width: 100px;
-  height: 7px;
-  border-radius: 5px;
-  transition: height 150ms ease;
+  max-width: 100%;
+  height: 8px;
+  border-radius: 4px;
 }
 
-.kcard:hover .k-label {
-  height: 9px;
-}
-
-.k-title {
-  margin: 0;
-  color: var(--text, #252b36);
-  font-size: 14px;
-  font-weight: 600;
-  line-height: 1.5;
+body:has(#view-boards:not([hidden])) .k-title {
+  margin: 0 !important;
+  color: var(--ink) !important;
+  font-size: 13.5px !important;
+  font-weight: 500 !important;
+  line-height: 1.45 !important;
   overflow-wrap: anywhere;
 }
 
-.k-meta {
+body:has(#view-boards:not([hidden])) .k-meta {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 8px;
-  margin-top: 2px;
-  color: var(--muted, #697386);
-  font-size: 12px;
-  line-height: 1.4;
+  gap: 6px !important;
+  margin-top: 1px;
+  font-size: 11.5px !important;
 }
 
-.k-chip {
+body:has(#view-boards:not([hidden])) .k-chip {
   display: inline-flex;
   align-items: center;
-  gap: 5px;
-  padding: 5px 8px;
-  border-radius: 6px;
-  background: #f0f2f5;
-  color: #4b5565;
+  gap: 4px;
+  padding: 4px 6px;
+  border-radius: 5px;
+  background: var(--surface-2);
+  color: var(--ink-soft);
   font-size: 11px;
   font-weight: 500;
-  white-space: nowrap;
 }
 
-.k-chip.late {
-  background: #fde8e7;
-  color: #b42318;
+body:has(#view-boards:not([hidden])) .k-chip.late {
+  background: var(--warn-soft);
+  color: var(--warn-text);
 }
 
-.k-chip.today {
-  background: #fff1d6;
-  color: #8a5200;
+body:has(#view-boards:not([hidden])) .k-chip.today {
+  background: var(--gold-soft);
+  color: var(--gold-ink);
 }
 
-.k-chip.ok {
-  background: #dcfce7;
-  color: #166534;
+body:has(#view-boards:not([hidden])) .k-chip.ok {
+  background: var(--ok-soft);
+  color: var(--ok-text);
 }
 
-.kcol {
-  border-radius: 14px;
+/* Agregar tarjeta: acción integrada en la columna */
+
+body:has(#view-boards:not([hidden])) .kcomposer {
+  flex-shrink: 0;
+  margin-top: 0;
 }
 
-.kcol-head {
-  gap: 8px;
-}
+/* Pantallas chicas */
 
-@media (prefers-reduced-motion: reduce) {
-  .kcard,
-  .k-label {
-    transition: none;
+@media (max-width: 760px) {
+  body:has(#view-boards:not([hidden])) #app .wrap {
+    padding: 10px !important;
+  }
+
+  body:has(#view-boards:not([hidden])) .top-bar {
+    margin-bottom: 8px !important;
+  }
+
+  body:has(#view-boards:not([hidden])) .kanban {
+    min-height: calc(100dvh - 140px);
+    padding: 5px 1px 14px !important;
+  }
+
+  body:has(#view-boards:not([hidden])) .kcol {
+    flex-basis: 84vw !important;
+    width: 84vw !important;
+    min-width: 260px !important;
+    max-height: calc(100dvh - 155px);
   }
 }
