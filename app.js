@@ -711,7 +711,11 @@ function viewLabel(k){
 }
 function allowedViews(){
   if (!hasAccess()) return [];
-  return Object.keys(VIEWS).filter(k => VIEWS[k].admin ? me.isAdmin : hasModule(VIEWS[k].mod));
+  return Object.keys(VIEWS).filter(k => {
+    if (VIEWS[k].admin) return me.isAdmin;
+    if (k === 'boards') return !!myMember || me.isAdmin;
+    return hasModule(VIEWS[k].mod);
+  });
 }
 let tabsSig = '';
 function renderTabs(){
