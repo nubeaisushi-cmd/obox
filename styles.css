@@ -1028,16 +1028,19 @@ label.check.off { opacity: .5; cursor: default; }
     display: none;
   }
 
-  body:has(#view-boards:not([hidden])) .kanban {
-    width: 100%;
-    min-height: calc(100dvh - 180px);
-    align-items: flex-start;
-    gap: 12px;
-    padding: 12px 4px 20px;
-    overflow-x: auto;
-    overflow-y: hidden;
-  }
-
+  
+body:has(#view-boards:not([hidden])) .kanban {
+  width: 100%;
+  min-height: calc(100dvh - 180px);
+  align-items: flex-start;
+  gap: 12px;
+  padding: 12px 4px 20px;
+  overflow-x: auto;
+  overflow-y: hidden;
+  background: transparent;
+  border: none;
+  box-shadow: none;
+}
   /* Listas y tarjetas, sin cambiar la paleta de Obox */
   body:has(#view-boards:not([hidden])) .kcol {
     flex: 0 0 290px;
