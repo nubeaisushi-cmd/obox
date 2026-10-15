@@ -1639,3 +1639,36 @@ body:has(#view-boards:not([hidden])) .k-label[title=""] {
     font-size: 19px;
   }
 }
+
+/* ===== OBOX · Descripción amplia para trabajar ===== */
+
+#card-modal-backdrop #cm-desc {
+  display: block !important;
+  width: 100% !important;
+  min-height: 320px !important;
+  height: 320px !important;
+  max-height: 55vh !important;
+  padding: 16px 18px !important;
+  margin: 0 0 22px !important;
+  font-size: 14px !important;
+  line-height: 1.75 !important;
+  resize: vertical !important;
+  overflow-y: auto !important;
+  box-sizing: border-box !important;
+}
+
+@media (min-width: 1000px) {
+  #card-modal-backdrop #cm-desc {
+    min-height: 380px !important;
+    height: 380px !important;
+    max-height: 60vh !important;
+  }
+}
+
+@media (max-width: 600px) {
+  #card-modal-backdrop #cm-desc {
+    min-height: 240px !important;
+    height: 240px !important;
+    max-height: 50vh !important;
+  }
+}
