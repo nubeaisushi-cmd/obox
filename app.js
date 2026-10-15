@@ -1774,6 +1774,16 @@ function patchCard(patch){
 }
 $('cm-title').addEventListener('change', (e) => { const c = curCard(); if (c) patchCard({ titulo: e.target.value.trim() || c.titulo }); });
 $('cm-desc').addEventListener('change', (e) => patchCard({ desc: e.target.value.trim() }));
+```js
+function ajustarAlturaDescripcion() {
+  const desc = $('cm-desc');
+  if (!desc) return;
+  desc.style.height = 'auto';
+  desc.style.height = Math.max(380, desc.scrollHeight) + 'px';
+}
+
+$('cm-desc').addEventListener('input', ajustarAlturaDescripcion);
+```
 $('cm-vence').addEventListener('change', (e) => patchCard({ vence: e.target.value || null }));
 $('cm-tipo').addEventListener('change', (e) => patchCard({ tipo: e.target.value || '' }));
 $('cm-campana')?.addEventListener('change', (e) => patchCard({ campaignId: e.target.value || '' }));
