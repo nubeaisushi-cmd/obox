@@ -1672,18 +1672,18 @@ body:has(#view-boards:not([hidden])) .k-label[title=""] {
     max-height: 50vh !important;
   }
 }
-```css
-/* OBOX — Descripción expansible de la tarjeta */
+/* OBOX — Descripción estilo Trello */
 #card-modal-backdrop #cm-desc {
   display: block !important;
   width: 100% !important;
-  min-height: 380px !important;
+  height: 150px !important;
+  min-height: 150px !important;
   max-height: none !important;
   overflow-y: hidden !important;
   resize: vertical !important;
   box-sizing: border-box !important;
-  padding: 16px 18px !important;
+  padding: 12px 14px !important;
+  margin-bottom: 18px !important;
   font-size: 14px !important;
-  line-height: 1.75 !important;
+  line-height: 1.6 !important;
 }
-```
