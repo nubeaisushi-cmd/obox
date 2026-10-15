@@ -958,3 +958,144 @@ label.check.off { opacity: .5; cursor: default; }
     max-height: calc(100dvh - 230px);
   }
 }
+
+/* ===== OBOX · Trello a pantalla completa ===== */
+
+/* Solo se activa cuando está abierta la vista Trello */
+@supports selector(.wrap:has(#view-boards:not([hidden]))) {
+  body:has(#view-boards:not([hidden])) {
+    overflow-x: hidden;
+  }
+
+  body:has(#view-boards:not([hidden])) #app .wrap {
+    width: 100%;
+    max-width: none;
+    margin: 0;
+    padding: 12px 20px 20px;
+  }
+
+  /* Compactar la cabecera de Obox */
+  body:has(#view-boards:not([hidden])) .top-bar {
+    margin-bottom: 12px;
+    gap: 12px;
+  }
+
+  /* Sacar el resumen diario para ganar espacio */
+  body:has(#view-boards:not([hidden])) .today-strip {
+    display: none;
+  }
+
+  /* El formulario de nueva tarea no ocupa espacio en Trello */
+  body:has(#view-boards:not([hidden])) .layout {
+    display: block;
+    width: 100%;
+    min-width: 0;
+  }
+
+  body:has(#view-boards:not([hidden])) .sidebar {
+    display: none !important;
+  }
+
+  body:has(#view-boards:not([hidden])) .main-col {
+    width: 100%;
+    min-width: 0;
+    max-width: none;
+  }
+
+  /* La navegación queda arriba del tablero */
+  body:has(#view-boards:not([hidden])) .toolbar {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-bottom: 12px;
+  }
+
+  body:has(#view-boards:not([hidden])) .view-switch {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  /* El tablero usa todo el ancho y casi todo el alto */
+  body:has(#view-boards:not([hidden])) #view-boards,
+  body:has(#view-boards:not([hidden])) #boards-root {
+    width: 100%;
+    min-width: 0;
+  }
+
+  body:has(#view-boards:not([hidden])) .filter-row {
+    display: none;
+  }
+
+  body:has(#view-boards:not([hidden])) .kanban {
+    width: 100%;
+    min-height: calc(100dvh - 180px);
+    align-items: flex-start;
+    gap: 12px;
+    padding: 12px 4px 20px;
+    overflow-x: auto;
+    overflow-y: hidden;
+  }
+
+  /* Listas y tarjetas, sin cambiar la paleta de Obox */
+  body:has(#view-boards:not([hidden])) .kcol {
+    flex: 0 0 290px;
+    width: 290px;
+    max-height: calc(100dvh - 205px);
+    min-height: 90px;
+    border-radius: 14px;
+    padding: 12px;
+    gap: 10px;
+  }
+
+  body:has(#view-boards:not([hidden])) .kcol-head {
+    padding: 2px 2px 8px;
+  }
+
+  body:has(#view-boards:not([hidden])) .kcol-cards {
+    gap: 10px;
+    min-height: 12px;
+  }
+
+  body:has(#view-boards:not([hidden])) .kcard {
+    padding: 14px;
+    border-radius: 10px;
+    gap: 10px;
+  }
+
+  body:has(#view-boards:not([hidden])) .k-title {
+    font-size: 14px;
+    line-height: 1.5;
+    overflow-wrap: anywhere;
+  }
+
+  body:has(#view-boards:not([hidden])) .k-meta {
+    gap: 8px;
+    font-size: 12px;
+    line-height: 1.5;
+  }
+
+  body:has(#view-boards:not([hidden])) .k-label {
+    min-width: 36px;
+  }
+}
+
+@media (max-width: 760px) {
+  @supports selector(.wrap:has(#view-boards:not([hidden]))) {
+    body:has(#view-boards:not([hidden])) #app .wrap {
+      padding: 10px;
+    }
+
+    body:has(#view-boards:not([hidden])) .kanban {
+      min-height: calc(100dvh - 155px);
+      padding: 8px 2px 16px;
+    }
+
+    body:has(#view-boards:not([hidden])) .kcol {
+      flex-basis: min(290px, 86vw);
+      width: min(290px, 86vw);
+      max-height: calc(100dvh - 180px);
+    }
+  }
+}
