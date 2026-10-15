@@ -1780,7 +1780,7 @@ function ajustarAlturaDescripcion() {
   const desc = $('cm-desc');
   if (!desc) return;
   desc.style.height = 'auto';
-  desc.style.height = Math.max(380, desc.scrollHeight) + 'px';
+  desc.style.height = Math.max(150, desc.scrollHeight) + 'px';
 }
 
 $('cm-desc').addEventListener('input', ajustarAlturaDescripcion);
