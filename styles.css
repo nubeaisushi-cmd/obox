@@ -1687,3 +1687,20 @@ body:has(#view-boards:not([hidden])) .k-label[title=""] {
   font-size: 14px !important;
   line-height: 1.6 !important;
 }
+/* OBOX — Entrada suave de las vistas */
+#view-board,
+#view-calendar,
+#view-boards,
+#view-week,
+#view-team {
+  transition: opacity .2s ease, transform .2s ease;
+}
+
+#view-board.fade-out,
+#view-calendar.fade-out,
+#view-boards.fade-out,
+#view-week.fade-out,
+#view-team.fade-out {
+  opacity: 0 !important;
+  transform: translateY(6px);
+}
