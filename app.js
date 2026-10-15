@@ -1736,7 +1736,11 @@ function fillCardModal(c){
     campSel.value = c.campaignId || ''; campSel.disabled = ro;
   }
   $('cm-aprobacion').value = c.aprobacion || ''; $('cm-aprobacion').disabled = ro;
-  $('cm-desc').value = c.desc || ''; $('cm-desc').disabled = ro;
+ ```js
+$('cm-desc').value = c.desc || '';
+$('cm-desc').disabled = ro;
+ajustarAlturaDescripcion();
+```
   $('cm-labels').replaceChildren(...LABELS.map(l => {
     const on = (c.labels || []).includes(l.id);
     return h('button', { type: 'button', class: 'lbl-btn' + (on ? ' on' : ''), style: `--lbl:${l.color}`, 'aria-pressed': on, disabled: ro, text: l.name,
