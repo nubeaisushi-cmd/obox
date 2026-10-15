@@ -827,3 +827,134 @@ label.check.off { opacity: .5; cursor: default; }
 .asg-clear { width: 100%; padding: 8px; border: 0; background: transparent; border-radius: 10px; font-size: 13px; color: var(--ink-soft); cursor: pointer; }
 .asg-clear:hover { background: var(--hover); color: var(--ink); }
 .asg-empty { padding: 8px 10px; font-size: 13px; color: var(--ink-faint); }
+
+/* ===== OBOX · Trello visual v1 ===== */
+/* Solo apariencia: conserva las funciones y los datos actuales */
+
+.kanban {
+  align-items: flex-start;
+  gap: 12px;
+  padding: 14px;
+  border-radius: 12px;
+  background: #0079bf;
+  scrollbar-color: rgba(255,255,255,.55) transparent;
+}
+
+.kanban .kcol:not(.kcol-new) {
+  --ink: #172b4d;
+  --ink-soft: #44546f;
+  --ink-faint: #626f86;
+  --list-bg: #f1f2f4;
+  --card-bg: #ffffff;
+  --card-hover: #f8f9fa;
+  --card-shadow: 0 1px 1px rgba(9,30,66,.18);
+  flex: 0 0 272px;
+  width: 272px;
+  max-height: calc(100vh - 260px);
+  gap: 8px;
+  padding: 8px;
+  border-radius: 12px;
+  background: #f1f2f4;
+  color: #172b4d;
+}
+
+.kanban .kcol-head {
+  gap: 6px;
+  padding: 4px 4px 8px;
+}
+
+.kanban .col-title-input {
+  color: #172b4d;
+  font-family: var(--font-body);
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: 0;
+}
+
+.kanban .kcol-tools {
+  opacity: 1;
+}
+
+.kanban .kcol-cards {
+  gap: 8px;
+  padding: 2px;
+}
+
+.kanban .kcard {
+  gap: 10px;
+  padding: 12px;
+  border: 1px solid rgba(9,30,66,.08);
+  border-radius: 8px;
+  background: #ffffff;
+  color: #172b4d;
+  box-shadow: 0 1px 1px rgba(9,30,66,.18);
+}
+
+.kanban .kcard:hover {
+  background: #f8f9fa;
+  box-shadow: 0 2px 4px rgba(9,30,66,.16);
+  transform: translateY(-1px);
+}
+
+.kanban .k-title {
+  color: #172b4d;
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 1.45;
+  overflow-wrap: anywhere;
+}
+
+.kanban .k-meta {
+  gap: 8px;
+  color: #44546f;
+  font-size: 12px;
+  line-height: 1.4;
+}
+
+.kanban .k-label {
+  width: 40px;
+  height: 8px;
+  border-radius: 4px;
+}
+
+.kanban .add-card-btn {
+  min-height: 36px;
+  padding: 8px;
+  border-radius: 8px;
+  color: #44546f;
+  font-size: 14px;
+}
+
+.kanban .add-card-btn:hover {
+  background: rgba(9,30,66,.08);
+  color: #172b4d;
+}
+
+.kanban .kcol-new {
+  width: 272px;
+  flex-basis: 272px;
+  padding: 10px;
+  border: 1px solid rgba(255,255,255,.35);
+  border-radius: 12px;
+  background: rgba(255,255,255,.22);
+}
+
+.kanban .kcol-new .col-title-input,
+.kanban .kcol-new .ctl {
+  color: #172b4d;
+}
+
+@media (max-width: 760px) {
+  .kanban {
+    gap: 10px;
+    padding: 10px;
+    margin-right: -4px;
+  }
+
+  .kanban .kcol:not(.kcol-new),
+  .kanban .kcol-new {
+    width: min(272px, 84vw);
+    flex-basis: min(272px, 84vw);
+    max-height: calc(100dvh - 230px);
+  }
+}
