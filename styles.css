@@ -1482,3 +1482,304 @@ body:has(#view-boards:not([hidden])) .k-label {
 body:has(#view-boards:not([hidden])) .k-label[title=""] {
   display: none;
 }
+
+/* =====================================================
+   OBOX · TARJETA AMPLIADA ESTILO TRELLO
+   Diseño de dos columnas, propiedades y contenido
+   ===================================================== */
+
+#card-modal-backdrop.day-modal-backdrop {
+  padding: 20px !important;
+  align-items: center !important;
+  justify-content: center !important;
+  background: rgba(18, 24, 38, 0.58) !important;
+  backdrop-filter: blur(3px);
+}
+
+#card-modal-backdrop .day-modal.wide {
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr) 270px;
+  column-gap: 28px;
+  row-gap: 14px;
+  width: min(1120px, calc(100vw - 48px)) !important;
+  max-width: 1120px !important;
+  max-height: calc(100dvh - 40px) !important;
+  overflow-x: hidden !important;
+  overflow-y: auto !important;
+  padding: 26px 30px 20px !important;
+  border: 1px solid #dfe3e8 !important;
+  border-radius: 14px !important;
+  background: #fff !important;
+  color: #172b4d;
+  box-shadow: 0 18px 55px rgba(9, 30, 66, 0.28) !important;
+  box-sizing: border-box;
+}
+
+/* Encabezado */
+
+#card-modal-backdrop .day-modal-head,
+#card-modal-backdrop .cm-sub {
+  grid-column: 1 / -1;
+}
+
+#card-modal-backdrop .day-modal-head {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  margin: 0;
+}
+
+#card-modal-backdrop .cm-title {
+  width: 100%;
+  min-width: 0;
+  padding: 7px 10px !important;
+  border: 2px solid transparent !important;
+  border-radius: 6px !important;
+  background: transparent !important;
+  color: #172b4d !important;
+  font-size: 23px !important;
+  font-weight: 700 !important;
+  line-height: 1.35 !important;
+}
+
+#card-modal-backdrop .cm-title:focus {
+  border-color: #85b8ff !important;
+  background: #f8faff !important;
+  outline: none;
+}
+
+#card-modal-backdrop #cm-close {
+  flex-shrink: 0;
+  border-radius: 50%;
+}
+
+#card-modal-backdrop .cm-sub {
+  margin: -7px 0 8px !important;
+  padding: 0 10px 14px;
+  border-bottom: 1px solid #e9edf2;
+  color: #6b778c !important;
+  font-size: 12px !important;
+}
+
+/* Columna derecha: propiedades de la tarjeta */
+
+#card-modal-backdrop .day-modal.wide > .cm-grid,
+#card-modal-backdrop .day-modal.wide > #cm-asg-wrap,
+#card-modal-backdrop .day-modal.wide > #cm-labels,
+#card-modal-backdrop .day-modal.wide > .cm-more {
+  grid-column: 2;
+}
+
+#card-modal-backdrop .day-modal.wide > .cm-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 12px;
+  align-self: start;
+  margin: 0;
+}
+
+#card-modal-backdrop .day-modal.wide > #cm-asg-wrap {
+  align-self: start;
+  min-width: 0;
+  padding: 0;
+}
+
+#card-modal-backdrop .day-modal.wide > .field,
+#card-modal-backdrop .day-modal.wide > .cm-grid .field {
+  min-width: 0;
+  margin: 0;
+}
+
+#card-modal-backdrop .field-label {
+  display: block;
+  margin-bottom: 6px;
+  color: #44546f;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+#card-modal-backdrop .day-modal.wide > .cm-sec {
+  grid-column: 2;
+  align-self: end;
+  margin: 0 0 -8px;
+}
+
+#card-modal-backdrop #cm-labels {
+  display: flex;
+  flex-wrap: wrap;
+  align-content: flex-start;
+  gap: 7px;
+  min-width: 0;
+  padding: 10px;
+  border: 1px solid #e6eaf0;
+  border-radius: 9px;
+  background: #f7f8fa;
+}
+
+#card-modal-backdrop .lbl-btn {
+  min-height: 30px;
+  padding: 6px 10px;
+  border: 2px solid transparent;
+  border-radius: 6px;
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+#card-modal-backdrop .lbl-btn.on {
+  box-shadow: 0 0 0 2px #fff, 0 0 0 4px #44546f;
+}
+
+/* Columna izquierda: descripción, checklist y adjuntos */
+
+#card-modal-backdrop .day-modal.wide > label[for="cm-desc"],
+#card-modal-backdrop .day-modal.wide > #cm-desc,
+#card-modal-backdrop .day-modal.wide > #cm-cl-bar,
+#card-modal-backdrop .day-modal.wide > #cm-checklist,
+#card-modal-backdrop .day-modal.wide > #cm-cl-addrow,
+#card-modal-backdrop .day-modal.wide > #cm-attach,
+#card-modal-backdrop .day-modal.wide > #cm-at-addrow,
+#card-modal-backdrop .day-modal.wide > #cm-at-hint {
+  grid-column: 1;
+  min-width: 0;
+}
+
+#card-modal-backdrop .day-modal.wide > label[for="cm-desc"],
+#card-modal-backdrop .day-modal.wide > #cm-cl-count,
+#card-modal-backdrop .day-modal.wide > #cm-at-count {
+  align-self: end;
+}
+
+#card-modal-backdrop #cm-desc {
+  width: 100%;
+  min-height: 130px;
+  padding: 12px 14px !important;
+  border: 1px solid #dfe3e8 !important;
+  border-radius: 8px !important;
+  background: #fafbfc !important;
+  color: #172b4d !important;
+  font-size: 14px !important;
+  line-height: 1.6 !important;
+  resize: vertical;
+  box-sizing: border-box;
+}
+
+#card-modal-backdrop #cm-desc:focus {
+  border-color: #85b8ff !important;
+  background: #fff !important;
+  outline: 2px solid rgba(56, 139, 253, 0.12);
+}
+
+#card-modal-backdrop #cm-cl-bar {
+  height: 7px;
+  overflow: hidden;
+  border-radius: 10px;
+  background: #e9edf2;
+}
+
+#card-modal-backdrop #cm-cl-bar span {
+  border-radius: inherit;
+}
+
+#card-modal-backdrop #cm-checklist,
+#card-modal-backdrop #cm-attach {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+}
+
+#card-modal-backdrop #cm-cl-addrow,
+#card-modal-backdrop #cm-at-addrow {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 3px;
+}
+
+#card-modal-backdrop #cm-cl-addrow .ctl,
+#card-modal-backdrop #cm-at-addrow .ctl {
+  flex: 1 1 180px;
+  min-width: 0;
+}
+
+#card-modal-backdrop #cm-at-hint {
+  margin: -5px 0 0;
+  color: #6b778c;
+  font-size: 11px;
+}
+
+/* Más detalles y pie */
+
+#card-modal-backdrop .day-modal.wide > .cm-more {
+  align-self: start;
+  min-width: 0;
+  margin: 0;
+  padding: 12px;
+  border: 1px solid #e6eaf0;
+  border-radius: 9px;
+  background: #f7f8fa;
+}
+
+#card-modal-backdrop .cm-more summary {
+  color: #44546f;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+#card-modal-backdrop .cm-more[open] .cm-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 12px;
+  margin-top: 14px;
+}
+
+#card-modal-backdrop .day-modal-foot {
+  grid-column: 1 / -1;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: 8px;
+  padding-top: 16px;
+  border-top: 1px solid #e9edf2;
+}
+
+#card-modal-backdrop .cm-saved {
+  margin-left: auto;
+  color: #16803c;
+  font-size: 12px;
+}
+
+/* Adaptación a pantallas pequeñas */
+
+@media (max-width: 700px) {
+  #card-modal-backdrop.day-modal-backdrop {
+    padding: 8px !important;
+    align-items: flex-start !important;
+  }
+
+  #card-modal-backdrop .day-modal.wide {
+    grid-template-columns: minmax(0, 1fr);
+    column-gap: 0;
+    row-gap: 12px;
+    width: 100% !important;
+    max-width: none !important;
+    max-height: calc(100dvh - 16px) !important;
+    padding: 16px !important;
+    border-radius: 10px !important;
+  }
+
+  #card-modal-backdrop .day-modal.wide > * {
+    grid-column: 1 !important;
+  }
+
+  #card-modal-backdrop .cm-title {
+    font-size: 19px !important;
+  }
+
+  #card-modal-backdrop .day-modal.wide > .cm-grid,
+  #card-modal-backdrop .cm-more[open] .cm-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
