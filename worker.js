@@ -325,11 +325,9 @@ async function procesarAvisosVencimiento(ctx, now, origin) {
     if (!c.vence) continue;
     const assigned = (Array.isArray(c.asignados) && c.asignados.length) || c.asignado;
     if (!assigned) continue;
-    const board = boardById.get(c.boardId);
-    const cols = board && Array.isArray(board.columns) ? board.columns : [];
-    const columnIndex = cols.findIndex(col => col.id === c.columnId);
-    const inDoneColumn = columnIndex >= 0 && cols.length > 1 && columnIndex === cols.length - 1;
-    if (c.ok || inDoneColumn) continue;
+    // En Trello, el recordatorio solo se detiene al marcar la tarjeta con el tick (c.ok).
+    // Moverla a una columna como "Listo" por sí solo no la da por terminada.
+    if (c.ok) continue;
     const state = reminderMapValue(c.avisosVencimiento);
     revisadas++;
     enviados += await avisarAsignados(ctx, c, 'cards', String(c.vence), clock.date, origin, state);
