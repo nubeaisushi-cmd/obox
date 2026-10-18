@@ -1768,22 +1768,6 @@ document.addEventListener('keydown', e => {
     closeImagePreview();
   }
 }, true);
-
-  try {
-    img.src = await getCardImageUrl(a);
-  } catch (e) {
-    closeImagePreview();
-    showToast('No pude cargar esta imagen.');
-  }
-}
-
-document.addEventListener('keydown', e => {
-  if (e.key === 'Escape' && imagePreviewBackdrop) {
-    e.stopImmediatePropagation();
-    e.preventDefault();
-    closeImagePreview();
-  }
-}, true);
 function kcardEl(c, board, isLast, ro){
   const total = (c.checklist || []).length, done = (c.checklist || []).filter(x => x.d).length;
   const labels = (c.labels || []).map(id => LABELS.find(l => l.id === id)).filter(Boolean);
