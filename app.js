@@ -73,7 +73,7 @@ const LABELS = [
   { id:'copy', name:'Copy', color:'#15875A' }, { id:'video', name:'Video', color:'#CC3A49' },
   { id:'urgente', name:'Urgente', color:'#8A6A00' }
 ];
-const MODULES = [ ['tablero','Tablero de tareas'], ['calendario','Calendario'], ['tableros','tableros (trello)'], ['semana','Semana y retro'] ];
+const MODULES = [ ['tablero','Tablero de tareas'], ['calendario','Calendario'], ['tableros','Trello'], ['semana','Semana y retro'] ];
 const DEFAULT_COLUMNS = ['Ideas', 'En producción', 'En revisión', 'Esperando al cliente', 'Listo'];
 const ICON = {
   edit: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>',
@@ -355,9 +355,10 @@ function hasModule(m){
 
   const modules = myMember.modules;
 
-  // Compatibilidad con miembros y permisos guardados anteriormente.
+  // Los miembros antiguos sin lista de módulos conservan el acceso.
   if (!Array.isArray(modules)) return true;
 
+  // Compatibilidad con el identificador anterior de Trello.
   if (m === 'tableros') {
     return modules.includes('tableros') ||
            modules.includes('tableros (trello)');
@@ -713,7 +714,6 @@ function allowedViews(){
   if (!hasAccess()) return [];
   return Object.keys(VIEWS).filter(k => {
     if (VIEWS[k].admin) return me.isAdmin;
-    if (k === 'boards') return !!myMember || me.isAdmin;
     return hasModule(VIEWS[k].mod);
   });
 }
@@ -2335,7 +2335,8 @@ function memberSummary(m){
   return `${cl} · ${mods}`;
 }
 function memberForm(init, saveLabel, onSave, onCancel){
-  const st = { role: ['admin', 'viewer'].includes(init.role) ? init.role : 'member', all: !!init.all, clients: new Set(init.clients || []), modules: new Set(init.modules || MODULES.map(m => m[0])) };
+  const savedModules = Array.isArray(init.modules) ? init.modules.map(k => k === 'tableros (trello)' ? 'tableros' : k) : MODULES.map(m => m[0]);
+  const st = { role: ['admin', 'viewer'].includes(init.role) ? init.role : 'member', all: !!init.all, clients: new Set(init.clients || []), modules: new Set(savedModules) };
   const role = h('select', { class: 'ctl', 'aria-label': 'Rol', value: st.role, onchange: (e) => { st.role = e.target.value; } },
     h('option', { value: 'member', text: 'Miembro: crea y edita en sus clientes' }), h('option', { value: 'viewer', text: 'Solo lectura: mira pero no edita' }),
     me.isOwner ? h('option', { value: 'admin', text: 'Admin: ve y administra todo, incluido el equipo' }) : null);
