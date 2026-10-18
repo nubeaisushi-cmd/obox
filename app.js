@@ -1601,46 +1601,173 @@ function closeImagePreview() {
   }
 }
 
-async function openImagePreview(a) {
+
+async function openImagePreview(images, startIndex = 0, cardId = '') {
   closeImagePreview();
+
+  const state = {
+    images,
+    index: startIndex,
+    cardId,
+    request: 0
+  };
 
   const backdrop = h('div', {
     class: 'obox-image-preview',
     role: 'dialog',
     'aria-modal': 'true',
-    'aria-label': 'Vista ampliada de la imagen'
+    'aria-label': 'Galería de imágenes'
   });
+
+  const panel = h('div', { class: 'obox-image-preview-panel' });
+  const img = h('img', {
+    class: 'obox-image-preview-img',
+    alt: ''
+  });
+  const caption = h('div', { class: 'obox-image-preview-caption' });
 
   const close = h('button', {
     type: 'button',
     class: 'obox-image-preview-close',
     text: '×',
-    'aria-label': 'Cerrar imagen',
+    'aria-label': 'Cerrar imágenes',
     onclick: closeImagePreview
   });
 
-  const img = h('img', {
-    class: 'obox-image-preview-img',
-    alt: a.name || 'Imagen adjunta'
+  const prev = h('button', {
+    type: 'button',
+    class: 'obox-image-preview-arrow obox-image-preview-prev',
+    text: '‹',
+    'aria-label': 'Foto anterior',
+    onclick: () => {
+      state.index = (state.index - 1 + state.images.length) % state.images.length;
+      paint();
+    }
   });
 
-  const caption = h('div', {
-    class: 'obox-image-preview-caption',
-    text: a.name || 'Imagen adjunta'
+  const next = h('button', {
+    type: 'button',
+    class: 'obox-image-preview-arrow obox-image-preview-next',
+    text: '›',
+    'aria-label': 'Foto siguiente',
+    onclick: () => {
+      state.index = (state.index + 1) % state.images.length;
+      paint();
+    }
   });
 
-  backdrop.append(
-    h('div', { class: 'obox-image-preview-panel' },
-      close, img, caption
-    )
-  );
+  const setCover = h('button', {
+    type: 'button',
+    class: 'obox-image-preview-action',
+    text: 'Usar como portada',
+    onclick: async () => {
+      const a = state.images[state.index];
+      if (!state.cardId || !a) return;
+
+      await wUpd('cards', state.cardId, { portadaId: a.id });
+      setCover.textContent = 'Portada guardada';
+      paint();
+    }
+  });
+
+  const removeCover = h('button', {
+    type: 'button',
+    class: 'obox-image-preview-action secondary',
+    text: 'Quitar portada',
+    onclick: async () => {
+      if (!state.cardId) return;
+
+      await wUpd('cards', state.cardId, { portadaId: '' });
+      removeCover.textContent = 'Portada quitada';
+      paint();
+    }
+  });
+
+  const counter = h('div', {
+    class: 'obox-image-preview-counter'
+  });
+
+  panel.append(close, prev, img, next, caption, counter,
+    h('div', { class: 'obox-image-preview-actions' }, setCover, removeCover));
+
+  backdrop.append(panel);
 
   backdrop.addEventListener('click', e => {
     if (e.target === backdrop) closeImagePreview();
   });
 
+  // Permite cambiar de foto deslizando en celulares.
+  let touchX = null;
+  img.addEventListener('touchstart', e => {
+    touchX = e.touches[0].clientX;
+  }, { passive: true });
+
+  img.addEventListener('touchend', e => {
+    if (touchX === null || state.images.length < 2) return;
+
+    const delta = e.changedTouches[0].clientX - touchX;
+    touchX = null;
+
+    if (Math.abs(delta) < 45) return;
+
+    state.index = delta < 0
+      ? (state.index + 1) % state.images.length
+      : (state.index - 1 + state.images.length) % state.images.length;
+
+    paint();
+  }, { passive: true });
+
   document.body.append(backdrop);
   imagePreviewBackdrop = backdrop;
+
+  async function paint() {
+    const a = state.images[state.index];
+    if (!a) return;
+
+    const request = ++state.request;
+    img.alt = a.name || 'Imagen adjunta';
+    img.removeAttribute('src');
+    caption.textContent = a.name || 'Imagen adjunta';
+    counter.textContent = `${state.index + 1} de ${state.images.length}`;
+
+    prev.hidden = state.images.length < 2;
+    next.hidden = state.images.length < 2;
+
+    const card = D.cards.find(c => c.id === state.cardId);
+    const currentCover = card
+      ? (card.portadaId === undefined
+          ? state.images[0]?.id
+          : card.portadaId)
+      : '';
+
+    const isCover = currentCover === a.id;
+    setCover.hidden = isCover;
+    removeCover.hidden = !currentCover;
+
+    try {
+      const url = await getCardImageUrl(a);
+      if (request !== state.request || !backdrop.isConnected) return;
+      img.src = url;
+    } catch (e) {
+      if (request === state.request) {
+        caption.textContent = 'No pude cargar esta imagen.';
+      }
+    }
+  }
+
+  paint();
+}
+
+document.addEventListener('keydown', e => {
+  if (!imagePreviewBackdrop) return;
+
+  const dialog = imagePreviewBackdrop;
+  if (e.key === 'Escape') {
+    e.stopImmediatePropagation();
+    e.preventDefault();
+    closeImagePreview();
+  }
+}, true);
 
   try {
     img.src = await getCardImageUrl(a);
@@ -1662,15 +1789,27 @@ function kcardEl(c, board, isLast, ro){
   const labels = (c.labels || []).map(id => LABELS.find(l => l.id === id)).filter(Boolean);
   const kAsg = teamMode() ? assigneesOf(c) : [];
   
+
 const cardImages = (c.adjuntos || []).filter(a =>
   a.kind !== 'link' && /^image\//i.test(a.type || '')
 );
-const coverImg = cardImages.length
+
+const coverAttachment = c.portadaId === undefined
+  ? cardImages[0]
+  : cardImages.find(a => a.id === c.portadaId);
+
+const coverImg = coverAttachment
   ? h('img', {
       class: 'kcard-cover-img',
-      alt: cardImages[0].name || 'Imagen adjunta',
+      alt: coverAttachment.name || 'Imagen adjunta',
       loading: 'lazy'
     })
+  : null;
+
+const cover = coverImg
+  ? h('div', { class: 'kcard-cover' }, coverImg)
+  : null;
+
   : null;
 
 const cover = coverImg
@@ -1691,22 +1830,21 @@ cover,
 h('p', { class: 'k-title', text: c.titulo }),
     (chips.length || kAsg.length) ? h('div', { class: 'k-meta' }, chips, kAsg.length ? avatarStack(kAsg) : null) : null);
 
-if (coverImg) {
-  const a = cardImages[0];
 
+if (coverImg) {
   coverImg.addEventListener('click', e => {
     e.stopPropagation();
-    openImagePreview(a);
+    openImagePreview(cardImages, cardImages.findIndex(a => a.id === coverAttachment.id), c.id);
   });
 
-  getCardImageUrl(a).then(url => {
+  getCardImageUrl(coverAttachment).then(url => {
     if (!coverImg.isConnected) return;
     coverImg.src = url;
     coverImg.classList.add('loaded');
   }).catch(() => {
     if (cover) cover.remove();
   });
-}  
+}
   el.addEventListener('click', () => openCard(c.id));
   el.addEventListener('keydown', (e) => { if (e.target === el && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); openCard(c.id); } });
   if (!ro) {
