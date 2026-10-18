@@ -2030,3 +2030,15 @@ button,
     font-size: 13px;
   }
 }
+
+
+/* Fix: las ventanas abiertas deben quedar por encima de la barra móvil sticky. */
+.day-modal-backdrop {
+  z-index: 1000 !important;
+}
+
+@media (max-width: 760px) {
+  #app:has(.day-modal-backdrop.show) .toolbar {
+    z-index: 0;
+  }
+}
