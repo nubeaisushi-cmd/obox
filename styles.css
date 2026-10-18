@@ -1704,3 +1704,104 @@ body:has(#view-boards:not([hidden])) .k-label[title=""] {
   opacity: 0 !important;
   transform: translateY(6px);
 }
+
+/* Fotos en las tarjetas de Trello */
+.kcard-cover {
+  margin: 8px 0 10px;
+  overflow: hidden;
+  border-radius: 9px;
+  background: #f0ebfa;
+  cursor: zoom-in;
+}
+
+.kcard-cover-img {
+  display: block;
+  width: 100%;
+  max-height: 190px;
+  object-fit: cover;
+  opacity: 0;
+  transition: opacity .18s ease;
+}
+
+.kcard-cover-img.loaded {
+  opacity: 1;
+}
+
+/* Visor de imágenes dentro de Obox */
+.obox-image-preview {
+  position: fixed;
+  inset: 0;
+  z-index: 100000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 18px;
+  background: rgba(20, 16, 30, .82);
+  backdrop-filter: blur(5px);
+}
+
+.obox-image-preview-panel {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  width: min(100%, 1050px);
+  max-height: 94dvh;
+  padding: 42px 12px 12px;
+  border: 1px solid rgba(255,255,255,.18);
+  border-radius: 16px;
+  background: #211b2b;
+}
+
+.obox-image-preview-img {
+  display: block;
+  max-width: 100%;
+  max-height: calc(94dvh - 110px);
+  width: auto;
+  height: auto;
+  object-fit: contain;
+  border-radius: 8px;
+}
+
+.obox-image-preview-caption {
+  max-width: 100%;
+  color: #fff;
+  font-size: 13px;
+  overflow-wrap: anywhere;
+  text-align: center;
+}
+
+.obox-image-preview-close {
+  position: absolute;
+  top: 7px;
+  right: 10px;
+  width: 36px;
+  height: 36px;
+  border: 0;
+  border-radius: 50%;
+  background: rgba(255,255,255,.12);
+  color: #fff;
+  font-size: 28px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+@media (max-width: 600px) {
+  .kcard-cover-img {
+    max-height: 160px;
+  }
+
+  .obox-image-preview {
+    padding: 8px;
+  }
+
+  .obox-image-preview-panel {
+    padding: 42px 8px 10px;
+    max-height: 96dvh;
+  }
+
+  .obox-image-preview-img {
+    max-height: calc(96dvh - 100px);
+  }
+}
