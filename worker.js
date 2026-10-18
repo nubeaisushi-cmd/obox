@@ -235,6 +235,109 @@ async function destinatarios(ctx, ev) {
   if (ev.visib === 'personas' && Array.isArray(ev.invitados)) ev.invitados.slice(0, 30).forEach((u) => set.add(u));
   return [...set].filter((u) => typeof u === 'string' && u);
 }
+
+/* ---------- avisos de vencimiento de tareas y tarjetas ---------- */
+// Se evalúa en horario de Argentina. El Worker ya corre cada minuto.
+function argentinaClock(now) {
+  const parts = new Intl.DateTimeFormat('en-CA', {
+    timeZone: 'America/Argentina/Buenos_Aires',
+    year: 'numeric', month: '2-digit', day: '2-digit',
+    hour: '2-digit', minute: '2-digit', hourCycle: 'h23'
+  }).formatToParts(new Date(now));
+  const out = {};
+  for (const p of parts) if (p.type !== 'literal') out[p.type] = p.value;
+  return { date: out.year + '-' + out.month + '-' + out.day, hour: Number(out.hour), minute: Number(out.minute) };
+}
+function shiftDate(iso, days) {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(String(iso || ''))) return '';
+  const d = new Date(iso + 'T12:00:00Z');
+  d.setUTCDate(d.getUTCDate() + days);
+  return d.toISOString().slice(0, 10);
+}
+function dueNoticeKind(dueDate, today) {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(String(dueDate || ''))) return null;
+  if (shiftDate(today, 1) === dueDate) return { key: 'pre:' + dueDate, title: '⏰ Mañana vence una tarea', bodyPrefix: 'Vence mañana' };
+  if (today > dueDate) return { key: 'late:' + today, title: '⚠️ Tenés una tarea vencida', bodyPrefix: 'Está vencida desde ' + dueDate };
+  return null;
+}
+function reminderMapValue(value) {
+  return value && typeof value === 'object' && !Array.isArray(value) ? value : {};
+}
+async function fsPatchTaskReminderState(ctx, collection, id, state) {
+  const fields = {};
+  for (const uid of Object.keys(state)) fields[uid] = { stringValue: String(state[uid]) };
+  const res = await fetch(fsBase(ctx.pid) + '/' + collection + '/' + seg(id) + '?updateMask.fieldPaths=avisosVencimiento&currentDocument.exists=true', {
+    method: 'PATCH',
+    headers: { Authorization: 'Bearer ' + ctx.at, 'Content-Type': 'application/json' },
+    body: JSON.stringify({ fields: { avisosVencimiento: { mapValue: { fields } } } })
+  });
+  return res.ok;
+}
+async function avisarAsignados(ctx, item, collection, dueDate, today, origin, state) {
+  const notice = dueNoticeKind(dueDate, today);
+  if (!notice) return 0;
+  const assignees = Array.isArray(item.asignados) && item.asignados.length
+    ? item.asignados.filter(Boolean)
+    : (item.asignado ? [item.asignado] : []);
+  if (!assignees.length) return 0;
+  let sent = 0;
+  for (const uid of [...new Set(assignees)]) {
+    if (state[uid] === notice.key) continue;
+    const tokens = await fsList(ctx, 'users/' + seg(uid) + '/tokens', 1000);
+    let delivered = false;
+    for (const t of tokens) {
+      if (!t.token) continue;
+      const title = notice.title + ': ' + String(item.titulo || 'Sin título').slice(0, 100);
+      const body = notice.bodyPrefix + (item.cliente ? ' · ' + String(item.cliente).slice(0, 60) : '') + '. Abrí Obox para revisarla.';
+      const r = await sendFcm(ctx, t.token, { title, body }, {
+        tipo: 'vencimiento',
+        coleccion: collection,
+        id: String(item.__id)
+      }, origin);
+      if (r.ok) { sent++; delivered = true; }
+      else if (r.dead) await fsDelete(ctx, 'users/' + seg(uid) + '/tokens/' + seg(t.token));
+    }
+    if (delivered) state[uid] = notice.key;
+  }
+  return sent;
+}
+async function procesarAvisosVencimiento(ctx, now, origin) {
+  const clock = argentinaClock(now);
+  // El aviso previo y los diarios se mandan a partir de las 9:00, una sola vez por día/fecha.
+  if (clock.hour !== 9) return { revisadas: 0, enviados: 0 };
+  const [tasks, cards, boards] = await Promise.all([
+    fsList(ctx, 'tasks', 1000),
+    fsList(ctx, 'cards', 1000),
+    fsList(ctx, 'boards', 1000)
+  ]);
+  const boardById = new Map(boards.map(b => [b.__id, b]));
+  let revisadas = 0, enviados = 0;
+  for (const t of tasks) {
+    if (!t.fecha || t.estado === 'Hecho') continue;
+    const assigned = (Array.isArray(t.asignados) && t.asignados.length) || t.asignado;
+    if (!assigned) continue;
+    const state = reminderMapValue(t.avisosVencimiento);
+    revisadas++;
+    enviados += await avisarAsignados(ctx, t, 'tasks', String(t.fecha), clock.date, origin, state);
+    await fsPatchTaskReminderState(ctx, 'tasks', t.__id, state);
+  }
+  for (const c of cards) {
+    if (!c.vence) continue;
+    const assigned = (Array.isArray(c.asignados) && c.asignados.length) || c.asignado;
+    if (!assigned) continue;
+    const board = boardById.get(c.boardId);
+    const cols = board && Array.isArray(board.columns) ? board.columns : [];
+    const columnIndex = cols.findIndex(col => col.id === c.columnId);
+    const inDoneColumn = columnIndex >= 0 && cols.length > 1 && columnIndex === cols.length - 1;
+    if (c.ok || inDoneColumn) continue;
+    const state = reminderMapValue(c.avisosVencimiento);
+    revisadas++;
+    enviados += await avisarAsignados(ctx, c, 'cards', String(c.vence), clock.date, origin, state);
+    await fsPatchTaskReminderState(ctx, 'cards', c.__id, state);
+  }
+  return { revisadas, enviados };
+}
+
 async function procesar(env, now) {
   const sa = getServiceAccount(env);
   if (!sa) {
@@ -277,7 +380,8 @@ let enviados = 0;
       }
     }
   }
-  return { ok: true, revisados: due.length, enviados };
+  const avisosTareas = await procesarAvisosVencimiento(ctx, now, origin);
+  return { ok: true, revisados: due.length, enviados: enviados + avisosTareas.enviados, avisosTareas };
 }
 
 export default {
