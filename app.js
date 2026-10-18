@@ -1624,31 +1624,6 @@ async function openImagePreview(images, startIndex = 0, cardId = '') {
     class: 'obox-image-preview-img',
     alt: ''
   });
-  let zoomed = false;
-  const zoom = h('button', {
-    type: 'button',
-    class: 'obox-image-preview-zoom',
-    text: '⌕+',
-    title: 'Ampliar imagen',
-    'aria-label': 'Ampliar imagen',
-    'aria-pressed': 'false',
-    onclick: () => {
-      zoomed = !zoomed;
-      img.classList.toggle('is-zoomed', zoomed);
-      zoom.textContent = zoomed ? '⌕−' : '⌕+';
-      zoom.title = zoomed ? 'Ajustar imagen a la pantalla' : 'Ampliar imagen';
-      zoom.setAttribute('aria-label', zoom.title);
-      zoom.setAttribute('aria-pressed', zoomed ? 'true' : 'false');
-    }
-  });
-  img.addEventListener('click', () => {
-    zoomed = !zoomed;
-    img.classList.toggle('is-zoomed', zoomed);
-    zoom.textContent = zoomed ? '⌕−' : '⌕+';
-    zoom.title = zoomed ? 'Ajustar imagen a la pantalla' : 'Ampliar imagen';
-    zoom.setAttribute('aria-label', zoom.title);
-    zoom.setAttribute('aria-pressed', zoomed ? 'true' : 'false');
-  });
   const caption = h('div', { class: 'obox-image-preview-caption' });
 
   const close = h('button', {
@@ -1712,7 +1687,7 @@ async function openImagePreview(images, startIndex = 0, cardId = '') {
     class: 'obox-image-preview-counter'
   });
 
-  panel.append(close, zoom, prev, img, next, caption, counter,
+  panel.append(close, prev, img, next, caption, counter,
     h('div', { class: 'obox-image-preview-actions' }, setCover, removeCover));
 
   backdrop.append(panel);
