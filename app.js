@@ -1802,11 +1802,24 @@ const cover = coverImg
   }
   if (total) chips.push(h('span', { class: 'k-chip' + (done === total ? ' ok' : ''), title: 'Checklist' }, h('span', { html: ICON.check, style: 'display:inline-flex' }), `${done}/${total}`));
   if ((c.adjuntos || []).length) chips.push(h('span', { class: 'k-chip', title: 'Adjuntos' }, h('span', { html: ICON.clip, style: 'display:inline-flex' }), String(c.adjuntos.length)));
-  const el = h('div', { class: 'kcard', 'data-id': c.id, draggable: !ro, tabindex: '0', role: 'button', 'aria-label': `Abrir tarjeta: ${c.titulo}` },   
+  const okControl = !ro
+    ? h('button', {
+        type: 'button',
+        class: 'kcard-ok' + (c.ok ? ' is-ok' : ''),
+        title: c.ok ? 'Marcar como pendiente' : 'Marcar como OK',
+        'aria-label': c.ok ? 'Marcar tarjeta como pendiente' : 'Marcar tarjeta como OK',
+        'aria-pressed': c.ok ? 'true' : 'false',
+        onclick: (e) => {
+          e.stopPropagation();
+          wUpd('cards', c.id, { ok: !c.ok });
+        }
+      }, h('span', { html: ICON.check, style: 'display:inline-flex' }))
+    : (c.ok ? h('span', { class: 'kcard-ok is-ok is-readonly', title: 'Tarjeta OK', 'aria-label': 'Tarjeta OK' }, h('span', { html: ICON.check, style: 'display:inline-flex' })) : null);
+  const el = h('div', { class: 'kcard' + (c.ok ? ' is-card-ok' : ''), 'data-id': c.id, draggable: !ro, tabindex: '0', role: 'button', 'aria-label': `Abrir tarjeta: ${c.titulo}` },   
 labels.length ? h('div', { class: 'k-labels' }, labels.map(l => h('span', { class: 'k-label', style: `background:${l.color}`, title: l.name }))) : null,
 cover,
 h('p', { class: 'k-title', text: c.titulo }),
-    (chips.length || kAsg.length) ? h('div', { class: 'k-meta' }, chips, kAsg.length ? avatarStack(kAsg) : null) : null);
+    (chips.length || kAsg.length || okControl) ? h('div', { class: 'k-meta' }, chips, kAsg.length ? avatarStack(kAsg) : null, okControl) : null);
 
 
 if (coverImg) {
