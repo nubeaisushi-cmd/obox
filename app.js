@@ -1793,12 +1793,6 @@ const coverImg = coverAttachment
 const cover = coverImg
   ? h('div', { class: 'kcard-cover' }, coverImg)
   : null;
-
-  : null;
-
-const cover = coverImg
-  ? h('div', { class: 'kcard-cover' }, coverImg)
-  : null;
   const chips = [];
   if (c.vence) {
     const late = daysLate(c.vence) > 0 && !isLast;
