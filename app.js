@@ -2116,7 +2116,7 @@ function renderAttach(c, ro){
     const isImage = a.kind !== 'link' && /^image\//i.test(a.type || '');
     const images = list.filter(x => x.kind !== 'link' && /^image\//i.test(x.type || ''));
     const actions = [
-      btn('↓', 'mini-btn at-download', (e) => downloadAttachment(a), { 'aria-label': 'Descargar archivo', title: 'Descargar archivo' })
+      btn('↓ Descargar', 'mini-btn at-download', () => downloadAttachment(a), { 'aria-label': 'Descargar archivo', title: 'Descargar archivo' })
     ];
     if (!ro) actions.push(btn('✕', 'mini-btn del', () => removeAttachment(a.id), { 'aria-label': 'Quitar adjunto', title: 'Quitar adjunto' }));
     return h('div', { class: 'at-row' },
