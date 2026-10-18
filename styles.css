@@ -1898,6 +1898,10 @@ button,
 }
 
 @media (max-width: 760px) {
+  html {
+    touch-action: manipulation;
+  }
+
   html,
   body {
     width: 100%;
