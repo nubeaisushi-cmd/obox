@@ -1,7 +1,8 @@
 rules_version = '2';
 
-// Reglas de seguridad de la agenda.
-// ANTES DE PUBLICAR: cambiá TU_EMAIL@gmail.com (una sola vez, abajo) por el Gmail con el que vas a entrar como dueño.
+// Reglas de seguridad de Obox.
+// IMPORTANTE: este archivo del repositorio puede diferir de las reglas activas de Firebase.
+// Antes de publicarlo, reemplazá el correo de ejemplo en isOwner() por el Gmail real del dueño y verificá los permisos.
 
 service cloud.firestore {
   match /databases/{database}/documents {
