@@ -2211,59 +2211,25 @@ button,
 }
 
 
-/* Restaurar ampliación de imágenes en la galería de Trello */
-.obox-image-preview-zoom {
-  position: absolute;
-  top: 9px;
-  left: 12px;
-  z-index: 4;
-  min-width: 40px;
-  height: 36px;
-  padding: 0 9px;
-  border: 1px solid rgba(255,255,255,.2);
-  border-radius: 9px;
-  background: rgba(255,255,255,.13);
-  color: #fff;
-  font-size: 19px;
-  cursor: pointer;
-}
-
+/* Galería de Trello: imagen limpia, sin control de zoom que no funciona */
 .obox-image-preview-img {
-  cursor: zoom-in;
-  transition: transform .16s ease;
-  transform-origin: center center;
+  cursor: default;
 }
 
-.obox-image-preview-img.is-zoomed {
-  max-width: none;
-  max-height: none;
-  width: auto;
-  height: auto;
-  cursor: zoom-out;
-  transform: scale(1.8);
-  margin: 20px;
+/* Botón de descarga destacado, manteniendo la paleta de Obox */
+.at-row .at-download {
+  border-radius: 10px;
+  background: linear-gradient(135deg, var(--surface), var(--surface-2));
+  box-shadow: 0 2px 5px rgba(40, 25, 60, .08);
+  transition: transform .15s ease, box-shadow .15s ease, background .15s ease;
 }
 
-.obox-image-preview-panel:has(.obox-image-preview-img.is-zoomed) {
-  overflow: auto;
-  align-items: center;
+.at-row .at-download:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 10px rgba(40, 25, 60, .15);
 }
 
-.obox-image-preview-panel:has(.obox-image-preview-img.is-zoomed) .obox-image-preview-actions {
-  position: sticky;
-  bottom: 0;
-  background: #211b2b;
-  padding: 8px 0;
-}
-
-@media (max-width: 760px) {
-  .obox-image-preview-zoom {
-    top: 8px;
-    left: 8px;
-  }
-
-  .obox-image-preview-img.is-zoomed {
-    transform: scale(1.5);
-    margin: 16px;
-  }
+.at-row .at-download:active {
+  transform: translateY(0);
+  box-shadow: none;
 }
