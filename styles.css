@@ -1875,3 +1875,154 @@ body:has(#view-boards:not([hidden])) .k-label[title=""] {
     padding: 10px;
   }
 }
+
+
+/* ===== OBOX · Optimización global para celulares ===== */
+
+/* Evita el zoom accidental por doble toque en controles, sin bloquear el zoom con dos dedos. */
+html {
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+}
+
+button,
+[role="tab"],
+.tab-btn,
+.view-switch,
+.kcard,
+.kcard-cover,
+.icon-btn,
+.btn,
+.client-chip {
+  touch-action: manipulation;
+}
+
+@media (max-width: 760px) {
+  html,
+  body {
+    width: 100%;
+    min-width: 0;
+    overflow-x: clip;
+  }
+
+  #app,
+  #app .wrap,
+  #app .layout,
+  #app .main-col {
+    min-width: 0;
+    max-width: 100%;
+  }
+
+  #app .wrap {
+    padding-left: max(12px, env(safe-area-inset-left));
+    padding-right: max(12px, env(safe-area-inset-right));
+  }
+
+  /* Barra de secciones fija mientras se recorre la página. */
+  #app .toolbar {
+    position: sticky;
+    top: 0;
+    z-index: 80;
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0;
+    width: 100%;
+    margin: 0 0 14px;
+    padding-top: 5px;
+    border-bottom: 1px solid var(--line);
+    background: var(--surface);
+    isolation: isolate;
+  }
+
+  /* Las pestañas quedan en una sola línea: se deslizan lateralmente, no saltan de lugar. */
+  #app .view-switch {
+    display: flex;
+    flex: 0 0 auto;
+    align-self: stretch;
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    overflow-y: hidden;
+    overscroll-behavior-x: contain;
+    -webkit-overflow-scrolling: touch;
+    touch-action: pan-x;
+    scrollbar-width: none;
+    padding: 0 2px;
+  }
+
+  #app .view-switch::-webkit-scrollbar {
+    display: none;
+  }
+
+  #app .view-switch .tab-btn {
+    flex: 0 0 auto;
+    min-height: 44px;
+    padding: 11px 13px 13px;
+    font-size: 14px;
+    white-space: nowrap;
+    touch-action: manipulation;
+  }
+
+  #app .search {
+    flex: 0 0 auto;
+    width: 100%;
+    max-width: none;
+    min-width: 0;
+    margin: 0;
+    padding: 6px 0 9px;
+  }
+
+  #app .search .ctl {
+    width: 100%;
+    min-height: 42px;
+    box-sizing: border-box;
+    font-size: 16px;
+  }
+
+  #app input,
+  #app select,
+  #app textarea {
+    max-width: 100%;
+    box-sizing: border-box;
+  }
+
+  #app .day-modal,
+  #card-modal-backdrop .day-modal.wide {
+    max-width: calc(100vw - 16px);
+    max-height: calc(100dvh - 16px);
+    overflow-x: hidden;
+    overscroll-behavior: contain;
+  }
+
+  /* Mantiene los controles cómodos al tacto y evita desplazamientos laterales de toda la web. */
+  #app button,
+  #app .tab-btn,
+  #app .client-chip {
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  body:has(#view-boards:not([hidden])) #app .toolbar {
+    gap: 0;
+    flex-wrap: nowrap;
+  }
+
+  body:has(#view-boards:not([hidden])) #app .view-switch {
+    flex-wrap: nowrap;
+  }
+}
+
+@media (max-width: 380px) {
+  #app .wrap {
+    padding-left: 9px;
+    padding-right: 9px;
+  }
+
+  #app .view-switch .tab-btn {
+    padding-left: 10px;
+    padding-right: 10px;
+    font-size: 13px;
+  }
+}
