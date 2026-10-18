@@ -2042,3 +2042,76 @@ button,
     z-index: 0;
   }
 }
+
+
+/* Trello: control para marcar una tarjeta como OK */
+.kcard .k-meta {
+  gap: 8px;
+}
+
+.kcard-ok {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 28px;
+  width: 28px;
+  height: 28px;
+  margin-left: auto;
+  padding: 0;
+  border: 1px solid var(--line);
+  border-radius: 50%;
+  color: var(--ink-soft);
+  background: var(--surface);
+  cursor: pointer;
+  transition: background .15s ease, color .15s ease, border-color .15s ease, transform .15s ease;
+  touch-action: manipulation;
+}
+
+.kcard-ok svg {
+  width: 16px;
+  height: 16px;
+}
+
+.kcard-ok:hover {
+  border-color: var(--ok);
+  color: var(--ok);
+}
+
+.kcard-ok.is-ok {
+  border-color: var(--ok);
+  color: #fff;
+  background: var(--ok);
+}
+
+.kcard-ok.is-ok:hover {
+  transform: scale(1.05);
+}
+
+.kcard-ok.is-readonly {
+  margin-left: auto;
+  cursor: default;
+}
+
+.kcard.is-card-ok {
+  border: 1px solid color-mix(in srgb, var(--ok) 50%, var(--line));
+}
+
+.kcard.is-card-ok .k-title {
+  color: var(--ink-soft);
+}
+
+.kcard.is-card-ok .k-title::after {
+  content: " · OK";
+  color: var(--ok);
+  font-size: 11px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+@media (max-width: 760px) {
+  .kcard-ok {
+    width: 32px;
+    height: 32px;
+    flex-basis: 32px;
+  }
+}
