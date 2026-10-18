@@ -1559,10 +1559,123 @@ function colEl(board, col, i, n, ro){
   return colEl_;
 }
 
+/* Vista previa de imágenes adjuntas en Trello */
+const cardImageCache = new Map();
+let imagePreviewBackdrop = null;
+
+async function getCardImageUrl(a) {
+  if (cardImageCache.has(a.id)) return cardImageCache.get(a.id);
+
+  const pending = (async () => {
+    if (a.store === 'storage') {
+      return await firebase.storage().ref(a.path).getDownloadURL();
+    }
+
+    let data = null;
+
+    if (a.store === 'local') {
+      data = localStorage.getItem(LOCAL_BLOB + a.id);
+    } else {
+      const snap = await dbApi.doc('blobs/' + a.id).get();
+      data = snap.exists ? snap.data().data : null;
+    }
+
+    if (!data) throw new Error('Imagen no disponible');
+    return data;
+  })();
+
+  cardImageCache.set(a.id, pending);
+
+  try {
+    return await pending;
+  } catch (e) {
+    cardImageCache.delete(a.id);
+    throw e;
+  }
+}
+
+function closeImagePreview() {
+  if (imagePreviewBackdrop) {
+    imagePreviewBackdrop.remove();
+    imagePreviewBackdrop = null;
+  }
+}
+
+async function openImagePreview(a) {
+  closeImagePreview();
+
+  const backdrop = h('div', {
+    class: 'obox-image-preview',
+    role: 'dialog',
+    'aria-modal': 'true',
+    'aria-label': 'Vista ampliada de la imagen'
+  });
+
+  const close = h('button', {
+    type: 'button',
+    class: 'obox-image-preview-close',
+    text: '×',
+    'aria-label': 'Cerrar imagen',
+    onclick: closeImagePreview
+  });
+
+  const img = h('img', {
+    class: 'obox-image-preview-img',
+    alt: a.name || 'Imagen adjunta'
+  });
+
+  const caption = h('div', {
+    class: 'obox-image-preview-caption',
+    text: a.name || 'Imagen adjunta'
+  });
+
+  backdrop.append(
+    h('div', { class: 'obox-image-preview-panel' },
+      close, img, caption
+    )
+  );
+
+  backdrop.addEventListener('click', e => {
+    if (e.target === backdrop) closeImagePreview();
+  });
+
+  document.body.append(backdrop);
+  imagePreviewBackdrop = backdrop;
+
+  try {
+    img.src = await getCardImageUrl(a);
+  } catch (e) {
+    closeImagePreview();
+    showToast('No pude cargar esta imagen.');
+  }
+}
+
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape' && imagePreviewBackdrop) {
+    e.stopImmediatePropagation();
+    e.preventDefault();
+    closeImagePreview();
+  }
+}, true);
 function kcardEl(c, board, isLast, ro){
   const total = (c.checklist || []).length, done = (c.checklist || []).filter(x => x.d).length;
   const labels = (c.labels || []).map(id => LABELS.find(l => l.id === id)).filter(Boolean);
   const kAsg = teamMode() ? assigneesOf(c) : [];
+  
+const cardImages = (c.adjuntos || []).filter(a =>
+  a.kind !== 'link' && /^image\//i.test(a.type || '')
+);
+const coverImg = cardImages.length
+  ? h('img', {
+      class: 'kcard-cover-img',
+      alt: cardImages[0].name || 'Imagen adjunta',
+      loading: 'lazy'
+    })
+  : null;
+
+const cover = coverImg
+  ? h('div', { class: 'kcard-cover' }, coverImg)
+  : null;
   const chips = [];
   if (c.vence) {
     const late = daysLate(c.vence) > 0 && !isLast;
@@ -1572,10 +1685,28 @@ function kcardEl(c, board, isLast, ro){
   }
   if (total) chips.push(h('span', { class: 'k-chip' + (done === total ? ' ok' : ''), title: 'Checklist' }, h('span', { html: ICON.check, style: 'display:inline-flex' }), `${done}/${total}`));
   if ((c.adjuntos || []).length) chips.push(h('span', { class: 'k-chip', title: 'Adjuntos' }, h('span', { html: ICON.clip, style: 'display:inline-flex' }), String(c.adjuntos.length)));
-  const el = h('div', { class: 'kcard', 'data-id': c.id, draggable: !ro, tabindex: '0', role: 'button', 'aria-label': `Abrir tarjeta: ${c.titulo}` },
-    labels.length ? h('div', { class: 'k-labels' }, labels.map(l => h('span', { class: 'k-label', style: `background:${l.color}`, title: l.name }))) : null,
-    h('p', { class: 'k-title', text: c.titulo }),
+  const el = h('div', { class: 'kcard', 'data-id': c.id, draggable: !ro, tabindex: '0', role: 'button', 'aria-label': `Abrir tarjeta: ${c.titulo}` },   
+labels.length ? h('div', { class: 'k-labels' }, labels.map(l => h('span', { class: 'k-label', style: `background:${l.color}`, title: l.name }))) : null,
+cover,
+h('p', { class: 'k-title', text: c.titulo }),
     (chips.length || kAsg.length) ? h('div', { class: 'k-meta' }, chips, kAsg.length ? avatarStack(kAsg) : null) : null);
+
+if (coverImg) {
+  const a = cardImages[0];
+
+  coverImg.addEventListener('click', e => {
+    e.stopPropagation();
+    openImagePreview(a);
+  });
+
+  getCardImageUrl(a).then(url => {
+    if (!coverImg.isConnected) return;
+    coverImg.src = url;
+    coverImg.classList.add('loaded');
+  }).catch(() => {
+    if (cover) cover.remove();
+  });
+}  
   el.addEventListener('click', () => openCard(c.id));
   el.addEventListener('keydown', (e) => { if (e.target === el && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); openCard(c.id); } });
   if (!ro) {
