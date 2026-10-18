@@ -2112,11 +2112,23 @@ function renderAttach(c, ro){
   const list = c.adjuntos || [];
   $('cm-at-count').textContent = list.length ? String(list.length) : '';
   const box = $('cm-attach');
-  const rows = list.map(a => h('div', { class: 'at-row' },
-    h('span', { class: 'at-ico', text: a.kind === 'link' ? '🔗' : fileExt(a.name).slice(0, 4) }),
-    h('button', { type: 'button', class: 'at-name', title: a.name, text: a.name, onclick: () => openAttachment(a) }),
-    h('span', { class: 'at-size', text: fmtSize(a.size) }),
-    ro ? null : btn('✕', 'mini-btn del', () => removeAttachment(a.id), { 'aria-label': 'Quitar adjunto' })));
+  const rows = list.map(a => {
+    const isImage = a.kind !== 'link' && /^image\//i.test(a.type || '');
+    const images = list.filter(x => x.kind !== 'link' && /^image\//i.test(x.type || ''));
+    const actions = [
+      btn('↓', 'mini-btn at-download', (e) => downloadAttachment(a), { 'aria-label': 'Descargar archivo', title: 'Descargar archivo' })
+    ];
+    if (!ro) actions.push(btn('✕', 'mini-btn del', () => removeAttachment(a.id), { 'aria-label': 'Quitar adjunto', title: 'Quitar adjunto' }));
+    return h('div', { class: 'at-row' },
+      h('span', { class: 'at-ico', text: a.kind === 'link' ? '🔗' : fileExt(a.name).slice(0, 4) }),
+      h('button', { type: 'button', class: 'at-name', title: a.name, text: a.name, onclick: () => {
+        if (isImage) openImagePreview(images, images.findIndex(x => x.id === a.id), c.id);
+        else openAttachment(a);
+      } }),
+      h('span', { class: 'at-size', text: fmtSize(a.size) }),
+      ...actions
+    );
+  });
   if (attachBusy) rows.push(h('div', { class: 'at-busy', text: attachProg.total > 1 ? `Subiendo ${Math.min(attachProg.done + 1, attachProg.total)} de ${attachProg.total}…` : 'Subiendo…' }));
   box.replaceChildren(...rows);
   $('cm-at-hint').textContent = ro ? '' : (storageOn() ? 'Podés elegir o arrastrar varios archivos a la vez (hasta 25 MB cada uno). Para algo más grande, pegá un link de Drive o Figma.' : 'Podés elegir o arrastrar varios archivos a la vez (hasta ~650 KB cada uno; las fotos se achican solas). Para algo más grande, pegá un link de Drive o Figma.');
@@ -2187,6 +2199,34 @@ function triggerDownload(blob, name, openInTab){
   if (openInTab) { window.open(url, '_blank', 'noopener'); }
   else { const a = document.createElement('a'); a.href = url; a.download = name; document.body.appendChild(a); a.click(); a.remove(); }
   setTimeout(() => URL.revokeObjectURL(url), 60000);
+}
+
+async function downloadAttachment(a){
+  if (!a || a.kind === 'link') {
+    if (a && a.url) window.open(a.url, '_blank', 'noopener');
+    return;
+  }
+  try {
+    let blob = null;
+    if (a.store === 'storage') {
+      const url = await firebase.storage().ref(a.path).getDownloadURL();
+      const response = await fetch(url);
+      if (!response.ok) throw new Error('No se pudo descargar');
+      blob = await response.blob();
+    } else {
+      let data = null;
+      if (a.store === 'local') data = localStorage.getItem(LOCAL_BLOB + a.id);
+      else {
+        const snap = await dbApi.doc('blobs/' + a.id).get();
+        data = snap.exists ? snap.data().data : null;
+      }
+      if (!data) throw new Error('Archivo no disponible');
+      blob = await (await fetch(data)).blob();
+    }
+    triggerDownload(blob, a.name || 'archivo', false);
+  } catch (e) {
+    showToast('No pude descargar el archivo. Probá abrirlo y guardarlo desde allí.');
+  }
 }
 
 async function openAttachment(a){
