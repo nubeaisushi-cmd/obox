@@ -1928,18 +1928,55 @@ function triggerDownload(blob, name, openInTab){
   else { const a = document.createElement('a'); a.href = url; a.download = name; document.body.appendChild(a); a.click(); a.remove(); }
   setTimeout(() => URL.revokeObjectURL(url), 60000);
 }
+
 async function openAttachment(a){
+  let opened = null;
   try {
-    if (a.kind === 'link') { window.open(a.url, '_blank', 'noopener'); return; }
+    if (a.kind === 'link') {
+      window.open(a.url, '_blank');
+      return;
+    }
+
     const viewable = /^(image\/|application\/pdf)/.test(a.type || '');
-    if (a.store === 'storage') { const url = await firebase.storage().ref(a.path).getDownloadURL(); window.open(url, '_blank', 'noopener'); return; }
+
+    // Abrir la pestaña mientras el toque del usuario sigue activo.
+    if (viewable) opened = window.open('about:blank', '_blank');
+
+    if (a.store === 'storage') {
+      const url = await firebase.storage().ref(a.path).getDownloadURL();
+      if (opened) opened.location.href = url;
+      else window.location.href = url;
+      return;
+    }
+
     let data = null;
-    if (a.store === 'local') data = localStorage.getItem(LOCAL_BLOB + a.id);
-    else { const snap = await dbApi.doc('blobs/' + a.id).get(); data = snap.exists ? snap.data().data : null; }
-    if (!data) { showToast('El archivo no está disponible (puede que no se haya incluido en una copia de seguridad).', null, 6000); return; }
+    if (a.store === 'local') {
+      data = localStorage.getItem(LOCAL_BLOB + a.id);
+    } else {
+      const snap = await dbApi.doc('blobs/' + a.id).get();
+      data = snap.exists ? snap.data().data : null;
+    }
+
+    if (!data) {
+      if (opened) opened.close();
+      showToast('El archivo no está disponible (puede que no se haya incluido en una copia de seguridad).', null, 6000);
+      return;
+    }
+
     const blob = await (await fetch(data)).blob();
-    triggerDownload(blob, a.name, viewable);
-  } catch(e) { showToast('No pude abrir el adjunto.'); }
+
+    if (viewable) {
+      const url = URL.createObjectURL(blob);
+      if (opened) opened.location.href = url;
+      else window.location.href = url;
+      setTimeout(() => URL.revokeObjectURL(url), 60000);
+    } else {
+      triggerDownload(blob, a.name, false);
+    }
+  } catch(e) {
+    if (opened) opened.close();
+    showToast('No pude abrir el adjunto.');
+  }
 }
 function dropFile(a){
   if (!a || a.kind === 'link') return;
