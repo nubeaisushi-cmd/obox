@@ -198,7 +198,7 @@ function assignmentNotices(prevDocs, nextDocs, meId, now){
 }
 function firstName(uid){ return String(nameOf(uid) || 'Alguien').trim().split(/\s+/)[0]; }
 function announceAssignments(col, prevDocs, nextDocs){
-  const list = assignmentNotices(prevDocs, nextDocs, me.id, Date.now());
+  const list = assignmentNotices(prevDocs, nextDocs, me.id, Date.now()).filter(x => !(col === 'tasks' && x.trelloCardId));
   if (!list.length) return;
   const noun = col === 'tasks' ? 'la tarea' : 'la tarjeta';
   const x = list[0];
@@ -931,7 +931,7 @@ function taskEl(t) {
   div.querySelector('.task-status').addEventListener('change', (e) => { setEstado(t, e.target.value); });
   div.querySelector('.task-date-input').addEventListener('change', (e) => { taskUpdate(t.id, { fecha: e.target.value || null }); });
   div.querySelector('.task-date-input').addEventListener('click', (e) => { try { e.target.showPicker && e.target.showPicker(); } catch(x) {} });
-  div.querySelector('.task-del').addEventListener('click', () => deleteWithUndo(t));
+  div.querySelector('.task-del').addEventListener('click', () => { if (t.trelloCardId) showToast('Esta tarea está vinculada a Trello. Ocultala desde la tarjeta para conservarla.'); else deleteWithUndo(t); });
   div.querySelector('.task-edit').addEventListener('click', () => {
     const ed = taskEditEl(t);
     div.replaceWith(ed);
@@ -947,6 +947,7 @@ function taskEditEl(t) {
   const sel = (cls, label, options, val) => h('select', { class: 'ctl ' + cls, 'aria-label': label, value: val }, options.map(o => h('option', { value: o[0], text: o[1] })));
   const titulo = h('input', { type: 'text', class: 'ctl e-titulo', value: t.titulo || '', maxlength: '200', 'aria-label': 'Título' });
   const cliente = sel('e-cliente', 'Cliente', clientes.map(c => [c.id, c.name]), t.cliente);
+  cliente.disabled = !!t.trelloCardId;
   const prioridad = sel('e-prioridad', 'Prioridad', ['Alta', 'Media', 'Baja'].map(p => [p, p]), t.prioridad || 'Media');
   const top3 = h('input', { type: 'checkbox', class: 'e-top3', checked: !!t.top3 });
   let asignado = null, asgPick = null;
