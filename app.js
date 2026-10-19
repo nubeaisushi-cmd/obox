@@ -471,7 +471,6 @@ function syncTaskMirror(task, patch){
   saveLocal('cards');
   scheduleRender();
 }
-}
 async function persist(col, fn){
   saveLocal(col);
   scheduleRender();
