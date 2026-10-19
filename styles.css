@@ -2233,3 +2233,14 @@ button,
   transform: translateY(0);
   box-shadow: none;
 }
+
+
+/* Controles de sincronización Trello ↔ Tareas */
+.cm-sync-controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin: 8px 0 14px;
+}
+.cm-sync-controls[hidden] { display: none !important; }
