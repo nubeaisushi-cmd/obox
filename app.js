@@ -1055,20 +1055,27 @@ function renderTasks() {
   const scoped = all.filter(matches);
   const open = scoped.filter(t => t.estado !== 'Hecho');
   const cerradas = scoped.filter(t => t.estado === 'Hecho').sort((a, b) => ((b.doneAt || 0) - (a.doneAt || 0)) || (b.fecha || '').localeCompare(a.fecha || ''));
-  const sortFn = (a, b) => { const ao = a.orden ?? 0, bo = b.orden ?? 0; if (ao !== bo) return ao - bo; return (PRIO_ORDER[a.prioridad] ?? 1) - (PRIO_ORDER[b.prioridad] ?? 1); };
+  // Dentro de cada grupo, ordenar por vencimiento: fecha más cercana primero y sin fecha al final.
+  const sortFn = (a, b) => {
+    const af = a.fecha || '', bf = b.fecha || '';
+    if (af !== bf) { if (!af) return 1; if (!bf) return -1; return af.localeCompare(bf); }
+    const p = (PRIO_ORDER[a.prioridad] ?? 1) - (PRIO_ORDER[b.prioridad] ?? 1);
+    if (p) return p;
+    return (a.orden ?? 0) - (b.orden ?? 0);
+  };
   const hoyS = todayStr(), mananaS = addDays(hoyS, 1);
   // Cada tarea aparece una sola vez en el tablero. El orden de prioridad visual es:
   // Top 3 → atrasadas → hoy → mañana → espera → resto.
   const top3 = open.filter(t => t.top3).sort(sortFn);
   const top3Ids = new Set(top3.map(t => t.id));
   const atrasadas = open.filter(t => !top3Ids.has(t.id) && t.fecha && daysLate(t.fecha) > 0 && t.estado !== 'Espera de respuesta')
-    .sort((a, b) => daysLate(b.fecha) - daysLate(a.fecha));
+    .sort(sortFn);
   const usedAfterLate = new Set([...top3Ids, ...atrasadas.map(t => t.id)]);
   const hoy = open.filter(t => !usedAfterLate.has(t.id) && t.fecha === hoyS).sort(sortFn);
   const usedAfterToday = new Set([...usedAfterLate, ...hoy.map(t => t.id)]);
   const manana = open.filter(t => !usedAfterToday.has(t.id) && t.fecha === mananaS).sort(sortFn);
   const usedAfterTomorrow = new Set([...usedAfterToday, ...manana.map(t => t.id)]);
-  const espera = open.filter(t => !usedAfterTomorrow.has(t.id) && t.estado === 'Espera de respuesta');
+  const espera = open.filter(t => !usedAfterTomorrow.has(t.id) && t.estado === 'Espera de respuesta').sort(sortFn);
   const used = new Set([...usedAfterTomorrow, ...espera.map(t => t.id)]);
   const resto = open.filter(t => !used.has(t.id)).sort(sortFn);
   fill('list-top3', top3, 'Elegí hasta 3 tareas y marcalas como Top 3 al crearlas.');
