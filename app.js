@@ -413,6 +413,65 @@ function upsertLocal(col, id, data, merge){
   if (i >= 0) D[col][i] = merge ? { ...D[col][i], ...data } : { id, ...data };
   else D[col].push({ id, ...data });
 }
+
+// Sincronización Trello ↔ Tareas. La ID determinística evita duplicados.
+const mirrorSyncBusy = new Set();
+const mirrorTaskId = cardId => 'trello_' + cardId;
+function cardMirrorFields(c){
+  const ids = assigneesOf(c);
+  return { trelloCardId:c.id, titulo:c.titulo || 'Tarjeta sin título', cliente:c.cliente, fecha:c.vence || null,
+    estado:c.hecho ? 'Hecho' : 'Por hacer', prioridad:'Media', notas:c.desc || '',
+    asignados:ids, asignado:ids[0] || null, hideFromTasks:!!c.hideFromTasks, hideFromCalendar:!!c.hideFromCalendar,
+    orden:c.createdAt || Date.now(), creadoPor:c.creadoPor || null };
+}
+async function syncCardMirror(card, createIfMissing=true){
+  if (!card || mirrorSyncBusy.has(card.id)) return;
+  mirrorSyncBusy.add(card.id);
+  try {
+    const id = mirrorTaskId(card.id);
+    let task = D.tasks.find(t => t.id === id || t.trelloCardId === card.id);
+    if (!task && mode === 'db') {
+      const snap = await dbApi.doc('tasks/' + id).get();
+      if (snap.exists) { task = { id, ...(snap.data() || {}) }; upsertLocal('tasks', id, task, false); }
+    }
+    if (!task && createIfMissing) {
+      const data = cardMirrorFields(card);
+      upsertLocal('tasks', id, data, false);
+      if (mode === 'db') await dbApi.doc('tasks/' + id).set(data, { merge:true });
+      saveLocal('tasks');
+      scheduleRender();
+      return;
+    }
+    if (!task) return;
+    const fields = cardMirrorFields(card);
+    const patch = Object.fromEntries(Object.entries(fields).filter(([k,v]) => k !== 'trelloCardId' && JSON.stringify(task[k] ?? null) !== JSON.stringify(v ?? null)));
+    if (Object.keys(patch).length) {
+      upsertLocal('tasks', task.id, patch, true);
+      if (mode === 'db') await dbApi.doc('tasks/' + task.id).set(patch, { merge:true });
+      saveLocal('tasks');
+      scheduleRender();
+    }
+  } catch(e) { console.warn('No se pudo sincronizar la tarjeta con Tareas', e); }
+  finally { mirrorSyncBusy.delete(card.id); }
+}
+function syncTaskMirror(task, patch){
+  if (!task || !task.trelloCardId || mirrorSyncBusy.has(task.trelloCardId)) return;
+  const card = D.cards.find(c => c.id === task.trelloCardId);
+  if (!card) return;
+  const cp = {};
+  if ('titulo' in patch) cp.titulo = patch.titulo;
+  if ('fecha' in patch) cp.vence = patch.fecha || null;
+  if ('notas' in patch) cp.desc = patch.notas || '';
+  if ('estado' in patch) cp.hecho = patch.estado === 'Hecho';
+  if ('asignados' in patch || 'asignado' in patch) { cp.asignados = assigneesOf({ ...task, ...patch }); cp.asignado = cp.asignados[0] || null; }
+  const changed = Object.fromEntries(Object.entries(cp).filter(([k,v]) => JSON.stringify(card[k] ?? null) !== JSON.stringify(v ?? null)));
+  if (!Object.keys(changed).length) return;
+  upsertLocal('cards', card.id, changed, true);
+  if (mode === 'db') dbApi.doc('cards/' + card.id).set(changed, { merge:true }).catch(e => console.warn('No se pudo sincronizar Tareas con Trello', e));
+  saveLocal('cards');
+  scheduleRender();
+}
+}
 async function persist(col, fn){
   saveLocal(col);
   scheduleRender();
@@ -420,8 +479,8 @@ async function persist(col, fn){
   try { await fn(); }
   catch(e) { showToast('No se pudo guardar. Revisá tu conexión o tus permisos.'); resync(col); }
 }
-function wSet(col, id, data){ upsertLocal(col, id, data, false); return persist(col, () => dbApi.doc(col + '/' + id).set(data)); }
-function wUpd(col, id, patch){ upsertLocal(col, id, patch, true); return persist(col, () => dbApi.doc(col + '/' + id).update(patch)); }
+function wSet(col, id, data){ upsertLocal(col, id, data, false); if (col === 'cards') syncCardMirror({ id, ...data }, true); return persist(col, () => dbApi.doc(col + '/' + id).set(data)); }
+function wUpd(col, id, patch){ const before = D[col].find(x => x.id === id); upsertLocal(col, id, patch, true); if (col === 'cards') syncCardMirror(D.cards.find(x => x.id === id), true); if (col === 'tasks') syncTaskMirror({ ...(before || {}), ...patch, id }, patch); return persist(col, () => dbApi.doc(col + '/' + id).update(patch)); }
 function wDel(col, id){ D[col] = D[col].filter(x => x.id !== id); return persist(col, () => dbApi.doc(col + '/' + id).delete()); }
 function resync(col){ if (mode === 'db') { if (col === 'events') { if (typeof mergeEvents === 'function') mergeEvents(); return; } rebuild(col); scheduleRender(); } }
 
@@ -609,6 +668,7 @@ function syncScoped(){
         const nextDocs = snap.docs.map(d => ({ id: d.id, ...(d.data() || {}) }));
         if (firstSeen.has(col + ':' + k) && (col === 'tasks' || col === 'cards')) announceAssignments(col, data.get(k) || [], nextDocs);
         data.set(k, nextDocs);
+        if (col === 'cards') nextDocs.forEach(c => syncCardMirror(c, true));
         firstSeen.add(col + ':' + k);
         rebuild(col);
         updateLoaded(keys);
@@ -979,7 +1039,7 @@ function deleteWithUndo(t) {
 }
 
 /* ---------- Render del tablero de tareas ---------- */
-function visibleTasks(){ return D.tasks.filter(t => t.id !== pendingDeleteId && clientVisible(t.cliente)); }
+function visibleTasks(){ return D.tasks.filter(t => t.id !== pendingDeleteId && !t.hideFromTasks && clientVisible(t.cliente)); }
 function mineOK(t){ return !onlyMine || assigneesOf(t).includes(me.id); }
 function matches(t) {
   if (!mineOK(t)) return false;
@@ -1389,7 +1449,7 @@ function renderCalendar() {
   const prevMonthDays = new Date(y, m, 0).getDate();
   const totalCells = Math.ceil((startWeekday + daysInMonth) / 7) * 7;
   const todayS = todayStr();
-  const pool = visibleTasks().filter(matches);
+  const pool = D.tasks.filter(t => t.id !== pendingDeleteId && clientVisible(t.cliente) && !t.hideFromCalendar).filter(matches);
   for (let i = 0; i < totalCells; i++) {
     const dayNum = i - startWeekday + 1;
     let cellDate, muted = false;
@@ -1450,7 +1510,7 @@ function closeDayModal() {
 }
 function renderDayModalContent() {
   if (!openDayIso) return;
-  const dayTasks = visibleTasks().filter(t => t.fecha === openDayIso && matches(t)).sort((a, b) => (a.orden ?? 0) - (b.orden ?? 0));
+  const dayTasks = D.tasks.filter(t => t.id !== pendingDeleteId && clientVisible(t.cliente) && !t.hideFromCalendar && t.fecha === openDayIso && matches(t)).sort((a, b) => (a.orden ?? 0) - (b.orden ?? 0));
   $('day-modal-title').textContent = fmtLong(openDayIso);
   const listEl = $('day-modal-list');
   listEl.innerHTML = '';
@@ -1986,6 +2046,17 @@ function syncCardModal(){
   if (!c) { closeCard(); return; }
   if (!modalFocused()) fillCardModal(c);
 }
+function ensureCardSyncControls(c, ro){
+  let wrap = $('cm-sync-controls');
+  if (!wrap) { wrap = h('div', { id:'cm-sync-controls', class:'cm-sync-controls' }); $('cm-sub').after(wrap); }
+  wrap.hidden = !!ro;
+  if (ro) return;
+  wrap.replaceChildren(
+    btn(c.hecho ? 'Reabrir tarea' : 'Marcar hecha', 'btn secondary sm', () => { const cur=curCard(); if (cur) patchCard({ hecho:!cur.hecho }); }),
+    btn(c.hideFromTasks ? 'Mostrar en Tareas' : 'Ocultar de Tareas', 'btn secondary sm', () => { const cur=curCard(); if (cur) patchCard({ hideFromTasks:!cur.hideFromTasks }); }),
+    btn(c.hideFromCalendar ? 'Mostrar en Calendario' : 'Ocultar de Calendario', 'btn secondary sm', () => { const cur=curCard(); if (cur) patchCard({ hideFromCalendar:!cur.hideFromCalendar }); })
+  );
+}
 function fillCardModal(c){
   const b = curBoard(c);
   if (!b) { closeCard(); return; }
@@ -1993,6 +2064,7 @@ function fillCardModal(c){
   const colId = b.columns.some(x => x.id === c.columnId) ? c.columnId : b.columns[0].id;
   $('cm-title').value = c.titulo || ''; $('cm-title').disabled = ro;
   $('cm-sub').textContent = `${clientName(b.cliente)} · ${b.title}` + (c.createdAt ? ` · creada el ${fmtShort(fmtISO(new Date(c.createdAt)))}` : '') + (ro ? ' · solo lectura' : '');
+  ensureCardSyncControls(c, ro);
   $('cm-col').replaceChildren(...b.columns.map(x => h('option', { value: x.id, text: x.title })));
   $('cm-col').value = colId; $('cm-col').disabled = ro;
   $('cm-asg-wrap').hidden = !teamMode();
