@@ -463,7 +463,7 @@ function syncTaskMirror(task, patch){
   if ('fecha' in patch) cp.vence = patch.fecha || null;
   if ('notas' in patch) cp.desc = patch.notas || '';
   if ('estado' in patch) cp.hecho = patch.estado === 'Hecho';
-  if ('asignados' in patch || 'asignado' in patch) { cp.asignados = assigneesOf({ ...task, ...patch }); cp.asignado = cp.asignados[0] || null; }
+  if ('asignados' in patch || 'asignado' in patch) { cp.asignados = assigneesOf({ ...task, ...patch }); cp.asignado = cp.asignados[0] || null; cp.asignadoPor = null; cp.asignadoAt = null; cp.asignadoNuevos = []; cp.avisadoAt = null; }
   const changed = Object.fromEntries(Object.entries(cp).filter(([k,v]) => JSON.stringify(card[k] ?? null) !== JSON.stringify(v ?? null)));
   if (!Object.keys(changed).length) return;
   upsertLocal('cards', card.id, changed, true);
