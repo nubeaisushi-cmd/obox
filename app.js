@@ -419,8 +419,9 @@ const mirrorSyncBusy = new Set();
 const mirrorTaskId = cardId => 'trello_' + cardId;
 function cardMirrorFields(c){
   const ids = assigneesOf(c);
+  const isDone = !!(c.ok || c.hecho);
   return { trelloCardId:c.id, titulo:c.titulo || 'Tarjeta sin título', cliente:c.cliente, fecha:c.vence || null,
-    estado:c.hecho ? 'Hecho' : 'Por hacer', prioridad:'Media', notas:c.desc || '',
+    estado:isDone ? 'Hecho' : 'Por hacer', prioridad:'Media', notas:c.desc || '',
     asignados:ids, asignado:ids[0] || null, hideFromTasks:!!c.hideFromTasks, hideFromCalendar:!!c.hideFromCalendar,
     orden:c.createdAt || Date.now(), creadoPor:c.creadoPor || null };
 }
@@ -455,14 +456,14 @@ async function syncCardMirror(card, createIfMissing=true){
   finally { mirrorSyncBusy.delete(card.id); }
 }
 function syncTaskMirror(task, patch){
-  if (!task || !task.trelloCardId || mirrorSyncBusy.has(task.trelloCardId)) return;
+  if (!task || !task.trelloCardId) return;
   const card = D.cards.find(c => c.id === task.trelloCardId);
   if (!card) return;
   const cp = {};
   if ('titulo' in patch) cp.titulo = patch.titulo;
   if ('fecha' in patch) cp.vence = patch.fecha || null;
   if ('notas' in patch) cp.desc = patch.notas || '';
-  if ('estado' in patch) cp.hecho = patch.estado === 'Hecho';
+  if ('estado' in patch) { cp.hecho = patch.estado === 'Hecho'; cp.ok = cp.hecho; }
   if ('asignados' in patch || 'asignado' in patch) { cp.asignados = assigneesOf({ ...task, ...patch }); cp.asignado = cp.asignados[0] || null; cp.asignadoPor = null; cp.asignadoAt = null; cp.asignadoNuevos = []; cp.avisadoAt = null; }
   const changed = Object.fromEntries(Object.entries(cp).filter(([k,v]) => JSON.stringify(card[k] ?? null) !== JSON.stringify(v ?? null)));
   if (!Object.keys(changed).length) return;
@@ -479,7 +480,18 @@ async function persist(col, fn){
   catch(e) { showToast('No se pudo guardar. Revisá tu conexión o tus permisos.'); resync(col); }
 }
 function wSet(col, id, data){ upsertLocal(col, id, data, false); if (col === 'cards') syncCardMirror({ id, ...data }, true); return persist(col, () => dbApi.doc(col + '/' + id).set(data)); }
-function wUpd(col, id, patch){ const before = D[col].find(x => x.id === id); upsertLocal(col, id, patch, true); if (col === 'cards') syncCardMirror(D.cards.find(x => x.id === id), true); if (col === 'tasks') syncTaskMirror({ ...(before || {}), ...patch, id }, patch); return persist(col, () => dbApi.doc(col + '/' + id).update(patch)); }
+function wUpd(col, id, patch){
+  const before = D[col].find(x => x.id === id);
+  let safePatch = patch;
+  if (col === 'cards' && ('ok' in patch || 'hecho' in patch)) {
+    const done = ('ok' in patch) ? !!patch.ok : !!patch.hecho;
+    safePatch = { ...patch, ok: done, hecho: done };
+  }
+  upsertLocal(col, id, safePatch, true);
+  if (col === 'cards') syncCardMirror(D.cards.find(x => x.id === id), true);
+  if (col === 'tasks') syncTaskMirror({ ...(before || {}), ...safePatch, id }, safePatch);
+  return persist(col, () => dbApi.doc(col + '/' + id).update(safePatch));
+}
 function wDel(col, id){ D[col] = D[col].filter(x => x.id !== id); return persist(col, () => dbApi.doc(col + '/' + id).delete()); }
 function resync(col){ if (mode === 'db') { if (col === 'events') { if (typeof mergeEvents === 'function') mergeEvents(); return; } rebuild(col); scheduleRender(); } }
 
@@ -2047,10 +2059,11 @@ function openCard(id){
   $('card-modal-backdrop').classList.add('show');
 }
 function closeCard(){ openCardId = null; $('card-modal-backdrop').classList.remove('show'); disarmCardDel(); }
-function modalFocused(){ const a = document.activeElement; return !!(a && a.closest && a.closest('#card-modal-backdrop') && /INPUT|TEXTAREA|SELECT/.test(a.tagName)); }
+function modalFocused(){ const a = document.activeElement; return !!(a && a.closest && a.closest('#card-modal-backdrop')); }
 function syncCardModal(){
   const c = curCard();
-  if (!c) { closeCard(); return; }
+  // Durante snapshots momentáneos puede faltar la tarjeta del array; no cerrar el modal por eso.
+  if (!c) return;
   if (!modalFocused()) fillCardModal(c);
 }
 function ensureCardSyncControls(c, ro){
@@ -2059,7 +2072,7 @@ function ensureCardSyncControls(c, ro){
   wrap.hidden = !!ro;
   if (ro) return;
   wrap.replaceChildren(
-    btn(c.hecho ? 'Reabrir tarea' : 'Marcar hecha', 'btn secondary sm', () => { const cur=curCard(); if (cur) patchCard({ hecho:!cur.hecho }); }),
+    btn((c.ok || c.hecho) ? 'Reabrir tarea' : 'Marcar hecha', 'btn secondary sm', () => { const cur=curCard(); if (cur) patchCard({ ok:!(cur.ok || cur.hecho), hecho:!(cur.ok || cur.hecho) }); }),
     btn(c.hideFromTasks ? 'Mostrar en Tareas' : 'Ocultar de Tareas', 'btn secondary sm', () => { const cur=curCard(); if (cur) patchCard({ hideFromTasks:!cur.hideFromTasks }); }),
     btn(c.hideFromCalendar ? 'Mostrar en Calendario' : 'Ocultar de Calendario', 'btn secondary sm', () => { const cur=curCard(); if (cur) patchCard({ hideFromCalendar:!cur.hideFromCalendar }); })
   );
@@ -2126,6 +2139,7 @@ function patchCard(patch){
   if (!c) return;
   const saved = wUpd('cards', c.id, patch);
   const s = $('cm-saved'); s.classList.add('show'); clearTimeout(savedTimer); savedTimer = setTimeout(() => s.classList.remove('show'), 1200);
+  const latest = curCard(); if (latest) ensureCardSyncControls(latest, !canWrite((curBoard(latest) || {}).cliente));
   return saved;
 }
 $('cm-title').addEventListener('change', (e) => { const c = curCard(); if (c) patchCard({ titulo: e.target.value.trim() || c.titulo }); });
