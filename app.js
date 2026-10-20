@@ -416,6 +416,8 @@ function upsertLocal(col, id, data, merge){
 
 // Sincronización Trello ↔ Tareas. La ID determinística evita duplicados.
 const mirrorSyncBusy = new Set();
+const mirrorSyncPending = new Map();
+const mirrorSyncPendingCreate = new Map();
 const mirrorTaskId = cardId => 'trello_' + cardId;
 function cardMirrorFields(c){
   const ids = assigneesOf(c);
@@ -426,7 +428,12 @@ function cardMirrorFields(c){
     orden:c.createdAt || Date.now(), creadoPor:c.creadoPor || null };
 }
 async function syncCardMirror(card, createIfMissing=true){
-  if (!card || mirrorSyncBusy.has(card.id)) return;
+  if (!card) return;
+  if (mirrorSyncBusy.has(card.id)) {
+    mirrorSyncPending.set(card.id, card);
+    mirrorSyncPendingCreate.set(card.id, !!createIfMissing || !!mirrorSyncPendingCreate.get(card.id));
+    return;
+  }
   mirrorSyncBusy.add(card.id);
   try {
     const id = mirrorTaskId(card.id);
@@ -453,7 +460,16 @@ async function syncCardMirror(card, createIfMissing=true){
       scheduleRender();
     }
   } catch(e) { console.warn('No se pudo sincronizar la tarjeta con Tareas', e); }
-  finally { mirrorSyncBusy.delete(card.id); }
+  finally {
+    mirrorSyncBusy.delete(card.id);
+    const pending = mirrorSyncPending.get(card.id);
+    if (pending) {
+      const shouldCreate = !!mirrorSyncPendingCreate.get(card.id);
+      mirrorSyncPending.delete(card.id);
+      mirrorSyncPendingCreate.delete(card.id);
+      syncCardMirror(pending, shouldCreate);
+    }
+  }
 }
 function syncTaskMirror(task, patch){
   if (!task || !task.trelloCardId) return;
@@ -679,9 +695,10 @@ function syncScoped(){
         const nextDocs = snap.docs.map(d => ({ id: d.id, ...(d.data() || {}) }));
         if (firstSeen.has(col + ':' + k) && (col === 'tasks' || col === 'cards')) announceAssignments(col, data.get(k) || [], nextDocs);
         data.set(k, nextDocs);
-        if (col === 'cards') nextDocs.forEach(c => syncCardMirror(c, true));
         firstSeen.add(col + ':' + k);
         rebuild(col);
+        // Sincronizar usando el estado más reciente ya reconstruido, no el snapshot anterior.
+        if (col === 'cards') D.cards.forEach(c => syncCardMirror(c, true));
         updateLoaded(keys);
         scheduleRender();
       }, () => { firstSeen.add(col + ':' + k); readError(); updateLoaded(keys); });
@@ -1597,10 +1614,15 @@ function renderBoards(){
     !ro ? btn('Editar tablero', 'btn secondary sm', () => openBoardModal(board.id)) : null,
     wClients.length ? h('button', { type: 'button', class: 'btn sm', onclick: () => openBoardModal(null) }, h('span', { html: ICON.plus, style: 'display:inline-flex' }), 'Nuevo tablero') : null);
 
+  const previousKanban = root.querySelector('.kanban');
+  const savedLeft = previousKanban ? previousKanban.scrollLeft : 0;
+  const savedTops = new Map(previousKanban ? [...previousKanban.querySelectorAll('.kcol-cards')].map(el => [el.dataset.col, el.scrollTop]) : []);
   const cols = board.columns || [];
   const kan = h('div', { class: 'kanban' }, cols.map((col, i) => colEl(board, col, i, cols.length, ro)));
   if (!ro) kan.append(newColEl(board));
   root.replaceChildren(bar, kan);
+  kan.scrollLeft = savedLeft;
+  kan.querySelectorAll('.kcol-cards').forEach(el => { el.scrollTop = savedTops.get(el.dataset.col) || 0; });
 }
 
 function colEl(board, col, i, n, ro){
