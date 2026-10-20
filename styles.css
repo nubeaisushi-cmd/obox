@@ -2244,3 +2244,29 @@ button,
   margin: 8px 0 14px;
 }
 .cm-sync-controls[hidden] { display: none !important; }
+
+/* Móvil: la barra de vistas no debe tapar festejos ni contenido al desplazarse. */
+@media (max-width: 760px) {
+  #app .toolbar,
+  body:has(#view-boards:not([hidden])) #app .toolbar {
+    position: relative !important;
+    top: auto !important;
+    z-index: 1 !important;
+    isolation: auto !important;
+  }
+
+  #app .wrap {
+    padding-bottom: max(120px, calc(96px + env(safe-area-inset-bottom, 0px))) !important;
+  }
+
+  #app .main-col,
+  #app #view-board,
+  #app #view-calendar,
+  #app #view-boards,
+  #app #view-week,
+  #app #view-team {
+    position: relative;
+    z-index: auto;
+  }
+}
+
