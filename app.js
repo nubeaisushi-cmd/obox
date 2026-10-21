@@ -624,6 +624,14 @@ function watchMe(){
     myMember = snap.exists ? { id: snap.id, ...(snap.data() || {}) } : null;
     me.isAdmin = !!(myMember && myMember.role === 'admin');
     me.isOwner = !!(myMember && myMember.owner === true);
+    // Preferencia inicial: miembros ven sus tareas; admin y dueño ven todas.
+    // Si la persona ya eligió una vista, respetamos esa elección.
+    const savedTaskScope = lsStr('agenda_only_mine');
+    if (savedTaskScope !== '1' && savedTaskScope !== '0') {
+      onlyMine = !me.isAdmin;
+    } else {
+      onlyMine = savedTaskScope === '1';
+    }
     if (myMember) {
       hadMember = true;
       setGate(null);
@@ -881,6 +889,7 @@ function renderChrome(){
   applyLayout();
   syncFormSelects();
   $('only-mine').classList.toggle('active', onlyMine);
+  $('only-mine').textContent = onlyMine ? 'Ver todas' : 'Solo mis tareas';
   $('only-mine').setAttribute('aria-pressed', onlyMine);
 }
 let selSig = '';
@@ -1262,7 +1271,7 @@ $('btn-reset').addEventListener('click', () => {
 
 /* ---------- Búsqueda y "solo mías" ---------- */
 $('search').addEventListener('input', (e) => { searchQ = norm(e.target.value.trim()); renderTasks(); });
-$('only-mine').addEventListener('click', () => { onlyMine = !onlyMine; lsPut('agenda_only_mine', onlyMine ? '1' : ''); renderChrome(); renderTasks(); });
+$('only-mine').addEventListener('click', () => { onlyMine = !onlyMine; lsPut('agenda_only_mine', onlyMine ? '1' : '0'); renderChrome(); renderTasks(); });
 
 /* ---------- Daily (personal) ---------- */
 function setIfIdle(id, val) { const el = $(id); if (document.activeElement !== el) el.value = val || ''; }
