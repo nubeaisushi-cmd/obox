@@ -1010,7 +1010,7 @@ function taskEditEl(t) {
   }
   const notas = h('textarea', { class: 'ctl e-notas', placeholder: 'Detalles, acuerdos, qué falta...', value: t.notas || '' });
   const close = () => { div.replaceWith(taskEl(t)); };
-  const save = () => {
+  const save = async () => {
     const wantTop = top3.checked;
     const patch = {
       titulo: titulo.value.trim() || t.titulo, cliente: cliente.value, prioridad: prioridad.value,
@@ -1022,7 +1022,10 @@ function taskEditEl(t) {
       Object.assign(patch, assignFields(chosen), assignStamp(t, chosen));
     }
     const saved = taskUpdate(t.id, patch);
-    if (saved) afterAssign('tasks', t.id, saved, patch);
+    if (!saved) return;
+    afterAssign('tasks', t.id, saved, patch);
+    const ok = await saved;
+    if (ok !== false) close();
   };
   div.append(h('div', { class: 'task-edit-body' },
     titulo,
@@ -1990,11 +1993,13 @@ function composerEl(board, col){
   const wrap = h('div', { class: 'kcomposer' });
   const open = () => {
     const ta = h('textarea', { class: 'ctl', placeholder: 'Título de la tarjeta', maxlength: '200', 'aria-label': 'Título de la nueva tarjeta' });
-    const add = () => {
+    const add = async () => {
       const t = ta.value.trim();
       if (!t) { ta.focus(); return; }
-      wSet('cards', newId(), { boardId: board.id, cliente: board.cliente, columnId: col.id, titulo: t, orden: nextOrden(board.id, col.id), createdAt: Date.now(), creadoPor: me.id || null, labels: [], checklist: [], tipo: '', aprobacion: '', campaignId: '' });
-      ta.value = ''; ta.focus();
+      const saved = await wSet('cards', newId(), { boardId: board.id, cliente: board.cliente, columnId: col.id, titulo: t, orden: nextOrden(board.id, col.id), createdAt: Date.now(), creadoPor: me.id || null, labels: [], checklist: [], tipo: '', aprobacion: '', campaignId: '' });
+      if (saved === false) { ta.focus(); return; }
+      composerCol = null;
+      scheduleRender();
     };
     const close = () => { composerCol = null; wrap.replaceChildren(trigger()); };
     ta.addEventListener('keydown', (e) => {
