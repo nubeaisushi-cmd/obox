@@ -624,14 +624,9 @@ function watchMe(){
     myMember = snap.exists ? { id: snap.id, ...(snap.data() || {}) } : null;
     me.isAdmin = !!(myMember && myMember.role === 'admin');
     me.isOwner = !!(myMember && myMember.owner === true);
-    // Preferencia inicial: miembros ven sus tareas; admin y dueño ven todas.
-    // Si la persona ya eligió una vista, respetamos esa elección.
-    const savedTaskScope = lsStr('agenda_only_mine');
-    if (savedTaskScope !== '1' && savedTaskScope !== '0') {
-      onlyMine = !me.isAdmin;
-    } else {
-      onlyMine = savedTaskScope === '1';
-    }
+    // Valor predeterminado en cada inicio de sesión: miembros ven solo sus tareas;
+    // admin y dueño ven todas. No se guarda la elección anterior.
+    onlyMine = !(me.isAdmin || me.isOwner);
     if (myMember) {
       hadMember = true;
       setGate(null);
@@ -859,7 +854,8 @@ function updateFilterVisibility(){
   const taskView = currentView === 'board' || currentView === 'calendar';
   $('client-chips').hidden = !taskView;
   $('search-wrap').hidden = !taskView;
-  $('only-mine').hidden = !(taskView && teamMode());
+  // El filtro "Solo mis tareas" es exclusivo del tablero, nunca del calendario.
+  $('only-mine').hidden = !(currentView === 'board' && teamMode());
 }
 function applyLayout(){
   const taskView = currentView === 'board' || currentView === 'calendar';
@@ -1101,7 +1097,11 @@ function deleteWithUndo(t) {
 
 /* ---------- Render del tablero de tareas ---------- */
 function visibleTasks(){ return D.tasks.filter(t => t.id !== pendingDeleteId && !t.hideFromTasks && clientVisible(t.cliente)); }
-function mineOK(t){ return !onlyMine || assigneesOf(t).includes(me.id); }
+function mineOK(t){
+  // El calendario siempre muestra todas las tareas, independientemente del filtro del tablero.
+  if (currentView === 'calendar') return true;
+  return !onlyMine || assigneesOf(t).includes(me.id);
+}
 function matches(t) {
   if (!mineOK(t)) return false;
   if (filterClient && t.cliente !== filterClient) return false;
@@ -1271,7 +1271,7 @@ $('btn-reset').addEventListener('click', () => {
 
 /* ---------- Búsqueda y "solo mías" ---------- */
 $('search').addEventListener('input', (e) => { searchQ = norm(e.target.value.trim()); renderTasks(); });
-$('only-mine').addEventListener('click', () => { onlyMine = !onlyMine; lsPut('agenda_only_mine', onlyMine ? '1' : '0'); renderChrome(); renderTasks(); });
+$('only-mine').addEventListener('click', () => { onlyMine = !onlyMine; renderChrome(); renderTasks(); });
 
 /* ---------- Daily (personal) ---------- */
 function setIfIdle(id, val) { const el = $(id); if (document.activeElement !== el) el.value = val || ''; }
@@ -2885,7 +2885,8 @@ document.addEventListener('keydown', (e) => {
 paintGreeting();
 $('motiv-msg').textContent = MOTIV[Math.floor(Math.random() * MOTIV.length)];
 $('f-fecha').value = todayStr();
-onlyMine = lsStr('agenda_only_mine') === '1';
+// El filtro se define al autenticar según el rol; no se recupera de localStorage.
+onlyMine = false;
 sidebarOpen = !isMobile();
 renderDaily();
 renderAll();
