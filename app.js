@@ -1885,11 +1885,24 @@ async function openImagePreview(images, startIndex = 0, cardId = '') {
 document.addEventListener('keydown', e => {
   if (!imagePreviewBackdrop) return;
 
-  const dialog = imagePreviewBackdrop;
   if (e.key === 'Escape') {
     e.stopImmediatePropagation();
     e.preventDefault();
     closeImagePreview();
+    return;
+  }
+
+  // Navegación por teclado entre las fotos de una tarjeta.
+  if (e.key === 'ArrowLeft' || e.key === 'ArrowRight') {
+    const arrows = imagePreviewBackdrop.querySelectorAll('.obox-image-preview-arrow');
+    const button = imagePreviewBackdrop.querySelector(
+      e.key === 'ArrowLeft' ? '.obox-image-preview-prev' : '.obox-image-preview-next'
+    );
+    if (button && !button.hidden) {
+      e.stopImmediatePropagation();
+      e.preventDefault();
+      button.click();
+    }
   }
 }, true);
 function kcardEl(c, board, isLast, ro){
