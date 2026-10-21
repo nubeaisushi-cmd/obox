@@ -225,7 +225,14 @@ async function pingNotify(col, id){
 }
 function afterAssign(col, id, saved, patch){
   if (!patch || !patch.asignadoNuevos || !id) return;
-  Promise.resolve(saved).then(() => pingNotify(col, id));
+  Promise.resolve(saved).then((ok) => {
+    if (ok === false) return;
+    // Una tarea vinculada a Trello y su tarjeta son el mismo trabajo:
+    // la notificación sale por la tarjeta para no duplicarla.
+    const task = col === 'tasks' ? D.tasks.find(t => t.id === id) : null;
+    if (task && task.trelloCardId) pingNotify('cards', task.trelloCardId);
+    else pingNotify(col, id);
+  });
 }
 
 /* Personas asignadas: un desplegable compacto, se puede marcar más de una (no crece aunque haya muchos nombres). */
@@ -471,7 +478,7 @@ async function syncCardMirror(card, createIfMissing=true){
     }
   }
 }
-function syncTaskMirror(task, patch){
+async function syncTaskMirror(task, patch){
   if (!task || !task.trelloCardId) return;
   const card = D.cards.find(c => c.id === task.trelloCardId);
   if (!card) return;
@@ -480,23 +487,33 @@ function syncTaskMirror(task, patch){
   if ('fecha' in patch) cp.vence = patch.fecha || null;
   if ('notas' in patch) cp.desc = patch.notas || '';
   if ('estado' in patch) { cp.hecho = patch.estado === 'Hecho'; cp.ok = cp.hecho; }
-  if ('asignados' in patch || 'asignado' in patch) { cp.asignados = assigneesOf({ ...task, ...patch }); cp.asignado = cp.asignados[0] || null; cp.asignadoPor = null; cp.asignadoAt = null; cp.asignadoNuevos = []; cp.avisadoAt = null; }
+  if ('asignados' in patch || 'asignado' in patch) {
+    cp.asignados = assigneesOf({ ...task, ...patch });
+    cp.asignado = cp.asignados[0] || null;
+    cp.asignadoPor = ('asignadoPor' in patch) ? patch.asignadoPor : (task.asignadoPor || null);
+    cp.asignadoAt = ('asignadoAt' in patch) ? patch.asignadoAt : (task.asignadoAt || null);
+    cp.asignadoNuevos = ('asignadoNuevos' in patch) ? (patch.asignadoNuevos || []) : (task.asignadoNuevos || []);
+    cp.avisadoAt = ('avisadoAt' in patch) ? (patch.avisadoAt || null) : (task.avisadoAt || null);
+  }
   const changed = Object.fromEntries(Object.entries(cp).filter(([k,v]) => JSON.stringify(card[k] ?? null) !== JSON.stringify(v ?? null)));
   if (!Object.keys(changed).length) return;
   upsertLocal('cards', card.id, changed, true);
-  if (mode === 'db') dbApi.doc('cards/' + card.id).set(changed, { merge:true }).catch(e => console.warn('No se pudo sincronizar Tareas con Trello', e));
   saveLocal('cards');
   scheduleRender();
+  if (mode === 'db') {
+    try { await dbApi.doc('cards/' + card.id).set(changed, { merge:true }); }
+    catch(e) { console.warn('No se pudo sincronizar Tareas con Trello', e); throw e; }
+  }
 }
 async function persist(col, fn){
   saveLocal(col);
   scheduleRender();
-  if (mode !== 'db') return;
-  try { await fn(); }
-  catch(e) { showToast('No se pudo guardar. Revisá tu conexión o tus permisos.'); resync(col); }
+  if (mode !== 'db') return true;
+  try { await fn(); return true; }
+  catch(e) { showToast('No se pudo guardar. Revisá tu conexión o tus permisos.'); resync(col); return false; }
 }
 function wSet(col, id, data){ upsertLocal(col, id, data, false); if (col === 'cards') syncCardMirror({ id, ...data }, true); return persist(col, () => dbApi.doc(col + '/' + id).set(data)); }
-function wUpd(col, id, patch){
+async function wUpd(col, id, patch){
   const before = D[col].find(x => x.id === id);
   let safePatch = patch;
   if (col === 'cards' && ('ok' in patch || 'hecho' in patch)) {
@@ -505,7 +522,10 @@ function wUpd(col, id, patch){
   }
   upsertLocal(col, id, safePatch, true);
   if (col === 'cards') syncCardMirror(D.cards.find(x => x.id === id), true);
-  if (col === 'tasks') syncTaskMirror({ ...(before || {}), ...safePatch, id }, safePatch);
+  if (col === 'tasks') {
+    try { await syncTaskMirror({ ...(before || {}), ...safePatch, id }, safePatch); }
+    catch(e) { showToast('No se pudo sincronizar la tarea vinculada con Trello.'); }
+  }
   return persist(col, () => dbApi.doc(col + '/' + id).update(safePatch));
 }
 function wDel(col, id){ D[col] = D[col].filter(x => x.id !== id); return persist(col, () => dbApi.doc(col + '/' + id).delete()); }
@@ -2160,7 +2180,15 @@ function patchCard(patch){
   const c = curCard();
   if (!c) return;
   const saved = wUpd('cards', c.id, patch);
-  const s = $('cm-saved'); s.classList.add('show'); clearTimeout(savedTimer); savedTimer = setTimeout(() => s.classList.remove('show'), 1200);
+  const s = $('cm-saved');
+  s.textContent = 'Guardando…';
+  s.classList.add('show');
+  clearTimeout(savedTimer);
+  Promise.resolve(saved).then(ok => {
+    s.textContent = ok === false ? 'No se guardó' : 'Guardado ✓';
+    clearTimeout(savedTimer);
+    savedTimer = setTimeout(() => s.classList.remove('show'), ok === false ? 2600 : 1200);
+  });
   const latest = curCard(); if (latest) ensureCardSyncControls(latest, !canWrite((curBoard(latest) || {}).cliente));
   return saved;
 }
