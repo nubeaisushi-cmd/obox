@@ -342,7 +342,11 @@ function clientById(id){ return D.clients.find(c => c.id === id) || null; }
 function clientName(id){ const c = clientById(id); return c ? c.name : (id || 'Sin cliente'); }
 function clientColor(id){ const c = clientById(id); return c ? c.color : '#6B6759'; }
 function activeClients(){ return D.clients.filter(c => !c.archived).sort((a, b) => (a.orden ?? 0) - (b.orden ?? 0)); }
-function scopeSees(m, cid){ return !!m && (m.role === 'admin' || m.all || (m.clients || []).includes(cid)); }
+function scopeSees(m, cid){
+  if (!m) return false;
+  if (m.role === 'cliente') return (m.clients || []).includes(cid);
+  return m.role === 'admin' || m.all || (m.clients || []).includes(cid);
+}
 function clientVisible(cid){
   const c = clientById(cid);
   if (!c) return me.isAdmin;
@@ -352,13 +356,14 @@ function clientVisible(cid){
 function canWrite(cid){
   if (!clientVisible(cid)) return false;
   if (me.isAdmin) return true;
-  return !!myMember && myMember.role !== 'viewer';
+  return !!myMember && !['viewer', 'cliente'].includes(myMember.role);
 }
 function writableClients(){ return activeClients().filter(c => canWrite(c.id)); }
 function canWriteAny(){ return writableClients().length > 0; }
 function hasModule(m){
   if (me.isAdmin) return true;
   if (!myMember) return false;
+  if (myMember.role === 'cliente') return ['tablero', 'calendario', 'tableros'].includes(m);
 
   const modules = myMember.modules;
 
@@ -373,7 +378,7 @@ function hasModule(m){
 
   return modules.includes(m);
 }
-function myRoleLabel(){ return me.isAdmin ? 'Admin' : (myMember && myMember.role === 'viewer' ? 'Solo lectura' : 'Miembro'); }
+function myRoleLabel(){ return me.isAdmin ? 'Admin' : (myMember && myMember.role === 'cliente' ? 'Cliente' : (myMember && myMember.role === 'viewer' ? 'Solo lectura' : 'Miembro')); }
 function nameOf(uid){
   if (!uid) return '';
   const p = PROF[uid];
@@ -435,7 +440,7 @@ function cardMirrorFields(c){
     orden:c.createdAt || Date.now(), creadoPor:c.creadoPor || null };
 }
 async function syncCardMirror(card, createIfMissing=true){
-  if (!card) return;
+  if (!card || (myMember && myMember.role === 'cliente')) return;
   if (mirrorSyncBusy.has(card.id)) {
     mirrorSyncPending.set(card.id, card);
     mirrorSyncPendingCreate.set(card.id, !!createIfMissing || !!mirrorSyncPendingCreate.get(card.id));
@@ -630,6 +635,12 @@ function watchMe(){
     if (myMember) {
       hadMember = true;
       setGate(null);
+      if (myMember.role === 'cliente') {
+        $('cover').hidden = true;
+        $('app').hidden = false;
+        currentView = 'board';
+        sidebarOpen = false;
+      }
       startData();
       if (was !== me.isAdmin) { dataReset(); }
       syncScoped();
@@ -657,26 +668,41 @@ function startData(){
   if (dataStarted) return;
   dataStarted = true;
   setSyncStatus('Conectado al equipo', true);
-  track(dbApi.collection('clients').onSnapshot((snap) => {
-    D.clients = snap.docs.map(d => ({ id: d.id, ...(d.data() || {}) }));
-    clientsReady = true;
-    syncScoped();
-    scheduleRender();
-  }, readError));
-  track(dbApi.collection('members').onSnapshot((snap) => {
+  if (myMember && myMember.role === 'cliente') {
+    const ids = [...new Set(myMember.clients || [])];
+    let pending = ids.length;
+    clientsReady = ids.length === 0;
+    if (!ids.length) { syncScoped(); scheduleRender(); }
+    ids.forEach(id => track(dbApi.doc('clients/' + id).onSnapshot((snap) => {
+      D.clients = D.clients.filter(c => c.id !== id);
+      if (snap.exists) D.clients.push({ id: snap.id, ...(snap.data() || {}) });
+      pending = Math.max(0, pending - 1);
+      if (pending === 0) { clientsReady = true; syncScoped(); scheduleRender(); }
+    }, () => { pending = Math.max(0, pending - 1); if (pending === 0) { clientsReady = true; syncScoped(); scheduleRender(); } })));
+  } else {
+    track(dbApi.collection('clients').onSnapshot((snap) => {
+      D.clients = snap.docs.map(d => ({ id: d.id, ...(d.data() || {}) }));
+      clientsReady = true;
+      syncScoped();
+      scheduleRender();
+    }, readError));
+  }
+  if (!(myMember && myMember.role === 'cliente')) track(dbApi.collection('members').onSnapshot((snap) => {
     D.members = snap.docs.map(d => ({ id: d.id, ...(d.data() || {}) }));
     scheduleRender();
   }, readError));
-  track(dbApi.collection('users').onSnapshot((snap) => {
+  if (!(myMember && myMember.role === 'cliente')) track(dbApi.collection('users').onSnapshot((snap) => {
     snap.docs.forEach(d => { const u = d.data() || {}; PROF[d.id] = { id: d.id, name: u.name || '', avatarUrl: u.photo || '', nick: u.nick || '', emoji: u.emoji || '', color: u.color || '', pic: u.pic || '', avMode: u.avMode || '' }; });
     if (typeof profileSynced === 'function') profileSynced();
     scheduleRender();
   }, () => {}));
   if (me.isAdmin) subRequests();
-  startPrivate();
-  if (typeof startEvents === 'function') startEvents();
-  publishProfile();
-  pushInit();
+  if (!(myMember && myMember.role === 'cliente')) {
+    startPrivate();
+    if (typeof startEvents === 'function') startEvents();
+    publishProfile();
+    pushInit();
+  }
 }
 function subRequests(){
   if (subRequests.on) return;
@@ -823,6 +849,7 @@ function viewLabel(k){
 }
 function allowedViews(){
   if (!hasAccess()) return [];
+  if (myMember && myMember.role === 'cliente') return ['board', 'calendar', 'boards'];
   return Object.keys(VIEWS).filter(k => {
     if (VIEWS[k].admin) return me.isAdmin;
     return hasModule(VIEWS[k].mod);
@@ -1526,7 +1553,7 @@ function renderCalendar() {
     else { cellDate = new Date(y, m, dayNum); }
     const iso = fmtISO(cellDate);
     const dayTasks = pool.filter(t => t.fecha === iso);
-    const dayEv = typeof eventsOn === 'function' ? eventsOn(iso) : [];
+    const dayEv = !(myMember && myMember.role === 'cliente') && typeof eventsOn === 'function' ? eventsOn(iso) : [];
     const cell = document.createElement('div');
     cell.className = 'cal-day' + (muted ? ' muted' : '') + (iso === todayS ? ' today' : '');
     cell.dataset.iso = iso;
@@ -2506,16 +2533,24 @@ function memberSummary(m){
 }
 function memberForm(init, saveLabel, onSave, onCancel){
   const savedModules = Array.isArray(init.modules) ? init.modules.map(k => k === 'tableros (trello)' ? 'tableros' : k) : MODULES.map(m => m[0]);
-  const st = { role: ['admin', 'viewer'].includes(init.role) ? init.role : 'member', all: !!init.all, clients: new Set(init.clients || []), modules: new Set(savedModules) };
-  const role = h('select', { class: 'ctl', 'aria-label': 'Rol', value: st.role, onchange: (e) => { st.role = e.target.value; } },
+  const st = { role: ['admin', 'viewer', 'cliente'].includes(init.role) ? init.role : 'member', all: !!init.all, clients: new Set(init.clients || []), modules: new Set(savedModules) };
+  const role = h('select', { class: 'ctl', 'aria-label': 'Rol', value: st.role, onchange: (e) => { st.role = e.target.value; syncRoleFields(); } },
     h('option', { value: 'member', text: 'Miembro: crea y edita en sus clientes' }), h('option', { value: 'viewer', text: 'Solo lectura: mira pero no edita' }),
+    h('option', { value: 'cliente', text: 'Cliente: ve sus marcas, solo lectura' }),
     me.isOwner ? h('option', { value: 'admin', text: 'Admin: ve y administra todo, incluido el equipo' }) : null);
   const allBox = h('input', { type: 'checkbox', checked: st.all });
   const clientBoxes = activeClients().map(c => {
     const cb = h('input', { type: 'checkbox', checked: st.clients.has(c.id), disabled: st.all, onchange: (e) => { e.target.checked ? st.clients.add(c.id) : st.clients.delete(c.id); } });
     return h('label', { class: 'check' }, cb, h('span', { class: 'cdot', style: `--dot:${c.color}` }), c.name);
   });
-  allBox.addEventListener('change', () => { st.all = allBox.checked; clientBoxes.forEach(l => { l.querySelector('input').disabled = st.all; }); });
+  allBox.addEventListener('change', () => { st.all = allBox.checked; clientBoxes.forEach(l => { l.querySelector('input').disabled = st.all || st.role === 'cliente'; }); });
+  function syncRoleFields(){
+    const isClient = st.role === 'cliente';
+    allBox.disabled = isClient;
+    if (isClient) { st.all = false; allBox.checked = false; }
+    clientBoxes.forEach(l => { l.querySelector('input').disabled = st.all || isClient; });
+  }
+  syncRoleFields();
   const modBoxes = MODULES.map(m => h('label', { class: 'check' },
     h('input', { type: 'checkbox', checked: st.modules.has(m[0]), onchange: (e) => { e.target.checked ? st.modules.add(m[0]) : st.modules.delete(m[0]); } }), m[1]));
   return h('div', { class: 'team-edit' },
@@ -2527,7 +2562,8 @@ function memberForm(init, saveLabel, onSave, onCancel){
     h('div', { class: 'frow' },
       btn(saveLabel, 'btn sm', () => {
         const isAdm = st.role === 'admin';
-        onSave({ role: st.role, all: isAdm || st.all, clients: (isAdm || st.all) ? [] : [...st.clients], modules: isAdm ? MODULES.map(m => m[0]) : [...st.modules] });
+        if (st.role === 'cliente' && st.clients.size === 0) { showToast('Elegí al menos una marca para el cliente.'); return; }
+        onSave({ role: st.role, all: isAdm || (st.role !== 'cliente' && st.all), clients: (isAdm || (st.role !== 'cliente' && st.all)) ? [] : [...st.clients], modules: isAdm ? MODULES.map(m => m[0]) : [...st.modules] });
       }),
       btn('Cancelar', 'btn secondary sm', onCancel)));
 }
@@ -2845,6 +2881,7 @@ function backupCard(){
 let lastDay = todayStr();
 function checkRollover() {
   const t = todayStr();
+  if (myMember && myMember.role === 'cliente') { lastDay = t; return; }
   if (t === lastDay) return;
   lastDay = t;
   dailyDirty = false; weekDirty = false;
