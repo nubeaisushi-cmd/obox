@@ -2543,12 +2543,12 @@ function memberForm(init, saveLabel, onSave, onCancel){
     const cb = h('input', { type: 'checkbox', checked: st.clients.has(c.id), disabled: st.all, onchange: (e) => { e.target.checked ? st.clients.add(c.id) : st.clients.delete(c.id); } });
     return h('label', { class: 'check' }, cb, h('span', { class: 'cdot', style: `--dot:${c.color}` }), c.name);
   });
-  allBox.addEventListener('change', () => { st.all = allBox.checked; clientBoxes.forEach(l => { l.querySelector('input').disabled = st.all || st.role === 'cliente'; }); });
+  allBox.addEventListener('change', () => { st.all = allBox.checked; clientBoxes.forEach(l => { l.querySelector('input').disabled = st.all; }); });
   function syncRoleFields(){
     const isClient = st.role === 'cliente';
     allBox.disabled = isClient;
     if (isClient) { st.all = false; allBox.checked = false; }
-    clientBoxes.forEach(l => { l.querySelector('input').disabled = st.all || isClient; });
+    clientBoxes.forEach(l => { l.querySelector('input').disabled = st.all; });
   }
   syncRoleFields();
   const modBoxes = MODULES.map(m => h('label', { class: 'check' },
