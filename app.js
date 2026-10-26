@@ -845,7 +845,7 @@ const VIEWS = {
   team:     { id:'view-team',     admin:true }
 };
 function viewLabel(k){
-  return { board:'Tablero', calendar:'Calendario', boards:'Tableros', week:'Semana', team: mode === 'db' ? 'Equipo' : 'Clientes' }[k];
+  return { board:'Tablero', calendar:'Calendario', boards:'Trello', week:'Semana', team: mode === 'db' ? 'Equipo' : 'Clientes' }[k];
 }
 function allowedViews(){
   if (!hasAccess()) return [];
@@ -1595,7 +1595,7 @@ function openDayModal(iso) {
   openDayIso = iso;
   renderDayModalContent();
   $('day-modal-add').hidden = !canWriteAny();
-  if ($('day-modal-add-ev')) $('day-modal-add-ev').hidden = !hasAccess();
+  if ($('day-modal-add-ev')) $('day-modal-add-ev').hidden = !hasAccess() || !!(myMember && myMember.role === 'cliente');
   $('day-modal-backdrop').classList.add('show');
   $('day-modal-close').focus();
 }
@@ -1609,7 +1609,7 @@ function renderDayModalContent() {
   $('day-modal-title').textContent = fmtLong(openDayIso);
   const listEl = $('day-modal-list');
   listEl.innerHTML = '';
-  const evs = typeof eventsOn === 'function' ? eventsOn(openDayIso) : [];
+  const evs = !(myMember && myMember.role === 'cliente') && typeof eventsOn === 'function' ? eventsOn(openDayIso) : [];
   if (evs.length) evs.forEach(e => listEl.appendChild(eventRowEl(e)));
   if (dayTasks.length === 0 && evs.length === 0) { const p = document.createElement('div'); p.className = 'empty'; p.textContent = 'Nada cargado para este día.'; listEl.appendChild(p); }
   else dayTasks.forEach(t => listEl.appendChild(taskEl(t)));
