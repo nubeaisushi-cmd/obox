@@ -631,7 +631,7 @@ function watchMe(){
     me.isOwner = !!(myMember && myMember.owner === true);
     // Valor predeterminado en cada inicio de sesión: miembros ven solo sus tareas;
     // admin y dueño ven todas. No se guarda la elección anterior.
-    onlyMine = !(me.isAdmin || me.isOwner);
+    onlyMine = !(me.isAdmin || me.isOwner || (myMember && myMember.role === 'cliente'));
     if (myMember) {
       hadMember = true;
       setGate(null);
