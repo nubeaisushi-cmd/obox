@@ -2,7 +2,7 @@ rules_version = '2';
 
 // Reglas de seguridad de Obox.
 // IMPORTANTE: este archivo del repositorio puede diferir de las reglas activas de Firebase.
-// Antes de publicarlo, reemplazá el correo de ejemplo en isOwner() por el Gmail real del dueño y verificá los permisos.
+// Revisá las reglas en Firebase Console antes de publicarlas.
 
 service cloud.firestore {
   match /databases/{database}/documents {
@@ -13,7 +13,7 @@ service cloud.firestore {
     function isOwner() {
       return signedIn()
         && request.auth.token.email_verified == true
-        && request.auth.token.email == 'TU_EMAIL@gmail.com';
+        && request.auth.token.email == 'nubeaisushi@gmail.com';
     }
     function memberPath() { return /databases/$(database)/documents/members/$(request.auth.uid); }
     function hasMember()  { return signedIn() && exists(memberPath()); }
@@ -21,11 +21,13 @@ service cloud.firestore {
 
     function isAdmin()  { return isOwner() || (hasMember() && me().get('role', '') == 'admin'); }
     function isMember() { return isOwner() || hasMember(); }
+    function isClientRole() { return hasMember() && me().get('role', '') == 'cliente'; }
 
-    // Miembro (no admin) que tiene asignado este cliente.
+    // El rol Cliente solo ve las marcas enumeradas en su ficha; nunca se aplica el permiso "todos".
     function seesC(cliente) {
-      return hasMember()
-        && (me().get('all', false) == true || cliente in me().get('clients', []));
+      return hasMember() && (isClientRole()
+        ? cliente in me().get('clients', [])
+        : (me().get('all', false) == true || cliente in me().get('clients', [])));
     }
     // Miembro con permiso de edición (no "solo lectura") sobre este cliente.
     function writesC(cliente) {
@@ -92,11 +94,11 @@ service cloud.firestore {
 
     /* ---------- Clientes y configuración: los ve el equipo, los cambia un admin ---------- */
     match /clients/{id} {
-      allow read:  if isMember();
+      allow read:  if isAdmin() || (hasMember() && (!isClientRole() || id in me().get('clients', [])));
       allow write: if isAdmin();
     }
     match /meta/{id} {
-      allow read:  if isMember();
+      allow read:  if isMember() && !isClientRole();
       allow write: if isAdmin();
     }
 
@@ -104,7 +106,7 @@ service cloud.firestore {
     // Cada evento lo ve: su dueño, todo el equipo (visib 'todos') o las personas elegidas (visib 'personas').
     // Un evento "solo yo" no lo lee nadie más, ni los administradores.
     match /events/{id} {
-      allow read:   if isMember()
+      allow read:   if isMember() && !isClientRole()
                     && (resource.data.owner == request.auth.uid
                         || resource.data.visib == 'todos'
                         || request.auth.uid in resource.data.get('invitados', []));
@@ -127,21 +129,21 @@ service cloud.firestore {
     // La ficha de cada persona: ella puede leer la suya; el equipo lee todas.
     // Solo el dueño crea admins. Un admin común administra miembros y "solo lectura".
     match /members/{uid} {
-      allow read: if signedIn() && (request.auth.uid == uid || isMember());
+      allow read: if signedIn() && (request.auth.uid == uid || (isMember() && !isClientRole()));
 
       allow create: if isOwner()
                     || (isAdmin()
-                        && request.resource.data.role in ['member', 'viewer']
+                        && request.resource.data.role in ['member', 'viewer', 'cliente']
                         && !('owner' in request.resource.data));
 
       allow update: if isOwner()
                     || (isAdmin()
-                        && resource.data.role in ['member', 'viewer']
-                        && request.resource.data.role in ['member', 'viewer']
+                        && resource.data.role in ['member', 'viewer', 'cliente']
+                        && request.resource.data.role in ['member', 'viewer', 'cliente']
                         && !('owner' in request.resource.data));
 
       allow delete: if (isOwner() && resource.data.get('owner', false) != true)
-                    || (isAdmin() && resource.data.role in ['member', 'viewer']);
+                    || (isAdmin() && resource.data.role in ['member', 'viewer', 'cliente']);
     }
 
     // Pedidos de acceso: cada persona escribe el suyo; los admins los leen y los borran.
@@ -160,8 +162,8 @@ service cloud.firestore {
 
     // Nombre, foto y personalización (nombre elegido, carita, color), visibles para el equipo.
     match /users/{uid} {
-      allow read:  if signedIn() && (request.auth.uid == uid || isMember());
-      allow create, update: if isMember() && request.auth.uid == uid
+      allow read:  if signedIn() && (request.auth.uid == uid || (isMember() && !isClientRole()));
+      allow create, update: if isMember() && !isClientRole() && request.auth.uid == uid
                    && request.resource.data.keys().hasOnly(['name', 'photo', 'nick', 'emoji', 'color', 'pic', 'avMode'])
                    && request.resource.data.name is string
                    && request.resource.data.get('nick', '') is string
@@ -182,7 +184,7 @@ service cloud.firestore {
 
       // Tu Daily, tu Semana y los tokens de aviso de tu celular: solo vos (y solo si ya sos parte del equipo).
       match /{coleccion}/{doc} {
-        allow read, write: if isMember() && request.auth.uid == uid
+        allow read, write: if isMember() && !isClientRole() && request.auth.uid == uid
                            && coleccion in ['daily', 'weekly', 'tokens'];
         // Los administradores pueden LEER el Daily de todo el equipo (no pueden editarlo).
         allow read: if isAdmin() && coleccion == 'daily';
