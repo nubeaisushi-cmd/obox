@@ -110,18 +110,18 @@ service cloud.firestore {
                     && (resource.data.owner == request.auth.uid
                         || resource.data.visib == 'todos'
                         || request.auth.uid in resource.data.get('invitados', []));
-      allow create: if isMember() && request.resource.data.owner == request.auth.uid
+      allow create: if isMember() && !isClientRole() && request.resource.data.owner == request.auth.uid
                     && request.resource.data.titulo is string
                     && request.resource.data.titulo.size() <= 200
                     && request.resource.data.visib in ['yo', 'todos', 'personas']
                     && request.resource.data.get('invitados', []).size() <= 30;
-      allow update: if isMember() && resource.data.owner == request.auth.uid
+      allow update: if isMember() && !isClientRole() && resource.data.owner == request.auth.uid
                     && request.resource.data.owner == request.auth.uid
                     && request.resource.data.titulo is string
                     && request.resource.data.titulo.size() <= 200
                     && request.resource.data.visib in ['yo', 'todos', 'personas']
                     && request.resource.data.get('invitados', []).size() <= 30;
-      allow delete: if isMember() && (resource.data.owner == request.auth.uid
+      allow delete: if isMember() && !isClientRole() && (resource.data.owner == request.auth.uid
                     || (isAdmin() && resource.data.visib == 'todos'));
     }
 
