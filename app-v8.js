@@ -155,6 +155,25 @@ function evVisible(e) {
 function eventsOn(iso) {
   return (D.events || []).filter(e => e.fecha === iso && evVisible(e)).sort((a, b) => (a.hora || '').localeCompare(b.hora || '') || (a.titulo || '').localeCompare(b.titulo || '', 'es'));
 }
+function eventRepeatDates(startIso, endIso, repeat) {
+  if (!startIso || repeat === 'none' || !endIso || endIso < startIso) return [startIso];
+  const start = new Date(startIso + 'T12:00:00');
+  const end = new Date(endIso + 'T12:00:00');
+  const dates = [];
+  for (let d = new Date(start); d <= end && dates.length < 100; ) {
+    dates.push(fmtISO(d));
+    if (repeat === 'daily') d.setDate(d.getDate() + 1);
+    else if (repeat === 'weekly') d.setDate(d.getDate() + 7);
+    else if (repeat === 'monthly') {
+      const day = start.getDate();
+      d.setDate(1);
+      d.setMonth(d.getMonth() + 1);
+      const lastDay = new Date(d.getFullYear(), d.getMonth() + 1, 0).getDate();
+      d.setDate(Math.min(day, lastDay));
+    } else break;
+  }
+  return dates.length ? dates : [startIso];
+}
 function evInicio(fecha, hora) {
   if (!fecha || !/^\d{2}:\d{2}$/.test(hora || '')) return 0;
   const [y, m, d] = fecha.split('-').map(Number), [hh, mm] = hora.split(':').map(Number);
@@ -186,8 +205,8 @@ $('day-modal-add-ev').addEventListener('click', () => { const iso = openDayIso; 
 function openEventModal(iso, existing) {
   const mine = !existing || existing.owner === myUid();
   const st = existing
-    ? { titulo: existing.titulo || '', notas: existing.notas || '', fecha: existing.fecha, hora: existing.hora || '', horaFin: existing.horaFin || '', visib: existing.visib || 'yo', invitados: (existing.invitados || []).slice(), recordar: (existing.recordar || []).slice() }
-    : { titulo: '', notas: '', fecha: iso, hora: '', horaFin: '', visib: 'yo', invitados: [], recordar: [] };
+    ? { titulo: existing.titulo || '', notas: existing.notas || '', fecha: existing.fecha, hora: existing.hora || '', horaFin: existing.horaFin || '', visib: existing.visib || 'yo', invitados: (existing.invitados || []).slice(), recordar: (existing.recordar || []).slice(), repetir: 'none', hasta: existing.fecha }
+    : { titulo: '', notas: '', fecha: iso, hora: '', horaFin: '', visib: 'yo', invitados: [], recordar: [], repetir: 'none', hasta: iso };
   const bd = mkModal('ev-modal', true), box = bd.firstChild;
   const canShare = teamMode();
   const people = h('div', { id: 'ev-people' });
@@ -199,6 +218,16 @@ function openEventModal(iso, existing) {
   const fecha = h('input', { class: 'ctl', type: 'date', value: st.fecha, disabled: !mine, 'aria-label': 'Fecha', onchange: (e) => { st.fecha = e.target.value; } });
   const hora = h('input', { class: 'ctl', type: 'time', value: st.hora, disabled: !mine, 'aria-label': 'Hora de inicio', onchange: (e) => { st.hora = e.target.value; paintRem(); } });
   const horaFin = h('input', { class: 'ctl', type: 'time', value: st.horaFin, disabled: !mine, 'aria-label': 'Hora de fin (opcional)', onchange: (e) => { st.horaFin = e.target.value; } });
+  const repetir = h('select', { class: 'ctl', value: st.repetir, disabled: !mine || !!existing, 'aria-label': 'Repetición', onchange: (e) => { st.repetir = e.target.value; repeatUntilWrap.hidden = st.repetir === 'none'; } },
+    h('option', { value: 'none', text: 'No se repite' }),
+    h('option', { value: 'daily', text: 'Todos los días' }),
+    h('option', { value: 'weekly', text: 'Todas las semanas' }),
+    h('option', { value: 'monthly', text: 'Todos los meses' }));
+  const repeatUntil = h('input', { class: 'ctl', type: 'date', value: st.hasta, min: st.fecha, disabled: !mine || !!existing, 'aria-label': 'Repetir hasta', onchange: (e) => { st.hasta = e.target.value; } });
+  const repeatUntilWrap = h('div', { class: 'field', hidden: st.repetir === 'none' || !!existing }, h('label', { class: 'field-label', text: 'Repetir hasta' }), repeatUntil);
+  const repeatWrap = h('div', { class: 'field', style: 'margin-top:12px' }, h('label', { class: 'field-label', text: 'Se repite' }), repetir);
+  const repeatNote = h('p', { class: 't-sub', style: 'margin:6px 0 0', text: existing && existing.serieId ? 'Este evento pertenece a una repetición. Los cambios o la eliminación se aplican solo a esta fecha.' : 'Elegí una fecha final para no crear eventos sin límite.' });
+  repeatNote.hidden = existing && !existing.serieId;
   const notas = h('textarea', { class: 'ctl', rows: '3', maxlength: '1000', placeholder: 'Notas, link de la videollamada, lugar…', disabled: !mine, 'aria-label': 'Notas', oninput: (e) => { st.notas = e.target.value; } });
   notas.value = st.notas;
 
@@ -229,6 +258,8 @@ function openEventModal(iso, existing) {
     const t = st.titulo.trim();
     if (!t) { title.classList.add('invalid'); title.focus(); return; }
     if (!st.fecha) { showToast('Elegí una fecha.'); return; }
+    if (st.repetir !== 'none' && (!st.hasta || st.hasta < st.fecha)) { showToast('Elegí una fecha final igual o posterior a la primera fecha.'); return; }
+    if (st.repetir !== 'none' && eventRepeatDates(st.fecha, st.hasta, st.repetir).length >= 100) { showToast('La repetición puede crear como máximo 100 eventos. Acercá la fecha final.'); return; }
     if (st.horaFin && st.hora && st.horaFin <= st.hora) { showToast('La hora de fin tiene que ser después de la de inicio.'); return; }
     const visib = canShare ? st.visib : 'yo';
     const invitados = visib === 'personas' ? st.invitados.filter(Boolean).slice(0, 30) : [];
@@ -238,12 +269,26 @@ function openEventModal(iso, existing) {
     const now = Date.now();
     const enviados = unchanged ? (existing.enviados || []) : recordar.filter(m => inicio - m * 60000 <= now);
     const pend = recordar.filter(m => !enviados.includes(m)).map(m => inicio - m * 60000);
-    const data = { titulo: t.slice(0, 120), notas: st.notas.trim().slice(0, 1000), fecha: st.fecha, hora: st.hora || '', horaFin: st.hora ? (st.horaFin || '') : '',
-      owner: myUid(), visib, invitados, recordar, inicio, enviados, proximoAviso: pend.length ? Math.min(...pend) : null };
-    if (existing) wUpd('events', existing.id, data);
-    else wSet('events', newId(), { ...data, creadoAt: now });
+    const baseData = { titulo: t.slice(0, 120), notas: st.notas.trim().slice(0, 1000), hora: st.hora || '', horaFin: st.hora ? (st.horaFin || '') : '',
+      owner: myUid(), visib, invitados, recordar };
+    if (existing) {
+      const data = { ...baseData, fecha: st.fecha, inicio, enviados, proximoAviso: pend.length ? Math.min(...pend) : null };
+      wUpd('events', existing.id, data);
+    } else {
+      const dates = eventRepeatDates(st.fecha, st.hasta, st.repetir);
+      const serieId = st.repetir === 'none' ? null : newId();
+      dates.forEach((fechaEvento) => {
+        const inicioEvento = evInicio(fechaEvento, st.hora);
+        const enviadosEvento = recordar.filter(m => inicioEvento - m * 60000 <= now);
+        const pendientesEvento = recordar.filter(m => !enviadosEvento.includes(m)).map(m => inicioEvento - m * 60000);
+        const data = { ...baseData, fecha: fechaEvento, inicio: inicioEvento, enviados: enviadosEvento,
+          proximoAviso: pendientesEvento.length ? Math.min(...pendientesEvento) : null, creadoAt: now,
+          ...(serieId ? { serieId, repetir: st.repetir, hasta: st.hasta } : {}) };
+        wSet('events', newId(), data);
+      });
+    }
     closeModal('ev-modal');
-    showToast(existing ? 'Evento actualizado.' : 'Evento creado. No aparece en tus tareas.');
+    showToast(existing ? 'Evento actualizado.' : (st.repetir === 'none' ? 'Evento creado. No aparece en tus tareas.' : 'Se crearon los eventos repetidos con sus recordatorios.'));
   });
   const del = existing && (mine || (me.isAdmin && existing.visib === 'todos')) ? btn('Eliminar', 'btn danger sm', () => {
     wDel('events', existing.id); closeModal('ev-modal'); showToast('Evento eliminado.');
@@ -258,6 +303,7 @@ function openEventModal(iso, existing) {
       h('div', { class: 'field' }, h('label', { class: 'field-label', text: 'Fecha' }), fecha),
       h('div', { class: 'field' }, h('label', { class: 'field-label', text: 'Desde' }), hora),
       h('div', { class: 'field' }, h('label', { class: 'field-label', text: 'Hasta (opcional)' }), horaFin)),
+    repeatWrap, repeatUntilWrap, repeatNote,
     h('label', { class: 'field-label', style: 'margin-top:12px', text: 'Notas' }), notas,
     h('span', { class: 'field-label', style: 'margin-top:14px', text: '¿Quién lo ve?' }), visSeg, visHint, people,
     h('span', { class: 'field-label', style: 'margin-top:14px', text: 'Avisarme' }), remBox, pushNote, msg,
