@@ -205,7 +205,7 @@ $('day-modal-add-ev').addEventListener('click', () => { const iso = openDayIso; 
 function openEventModal(iso, existing) {
   const mine = !existing || existing.owner === myUid();
   const st = existing
-    ? { titulo: existing.titulo || '', notas: existing.notas || '', fecha: existing.fecha, hora: existing.hora || '', horaFin: existing.horaFin || '', visib: existing.visib || 'yo', invitados: (existing.invitados || []).slice(), recordar: (existing.recordar || []).slice(), repetir: 'none', hasta: existing.fecha }
+    ? { titulo: existing.titulo || '', notas: existing.notas || '', fecha: existing.fecha, hora: existing.hora || '', horaFin: existing.horaFin || '', visib: existing.visib || 'yo', invitados: (existing.invitados || []).slice(), recordar: (existing.recordar || []).slice(), repetir: existing.repetir || 'none', hasta: existing.hasta || existing.fecha }
     : { titulo: '', notas: '', fecha: iso, hora: '', horaFin: '', visib: 'yo', invitados: [], recordar: [], repetir: 'none', hasta: iso };
   const bd = mkModal('ev-modal', true), box = bd.firstChild;
   const canShare = teamMode();
@@ -215,7 +215,7 @@ function openEventModal(iso, existing) {
   asg.set(others, st.invitados, !mine);
 
   const title = h('input', { class: 'ctl', maxlength: '120', placeholder: 'Ej.: Reunión con Dimarco', value: st.titulo, disabled: !mine, 'aria-label': 'Título', oninput: (e) => { st.titulo = e.target.value; title.classList.remove('invalid'); } });
-  const fecha = h('input', { class: 'ctl', type: 'date', value: st.fecha, disabled: !mine, 'aria-label': 'Fecha', onchange: (e) => { st.fecha = e.target.value; } });
+  const fecha = h('input', { class: 'ctl', type: 'date', value: st.fecha, disabled: !mine, 'aria-label': 'Fecha', onchange: (e) => { st.fecha = e.target.value; fecha.min = e.target.value; if (!st.hasta || st.hasta < st.fecha) { st.hasta = st.fecha; repeatUntil.value = st.hasta; } repeatUntil.min = st.fecha; } });
   const hora = h('input', { class: 'ctl', type: 'time', value: st.hora, disabled: !mine, 'aria-label': 'Hora de inicio', onchange: (e) => { st.hora = e.target.value; paintRem(); } });
   const horaFin = h('input', { class: 'ctl', type: 'time', value: st.horaFin, disabled: !mine, 'aria-label': 'Hora de fin (opcional)', onchange: (e) => { st.horaFin = e.target.value; } });
   const repetir = h('select', { class: 'ctl', value: st.repetir, disabled: !mine || !!existing, 'aria-label': 'Repetición', onchange: (e) => { st.repetir = e.target.value; repeatUntilWrap.hidden = st.repetir === 'none'; } },
