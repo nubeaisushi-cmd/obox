@@ -198,7 +198,8 @@ function assignmentNotices(prevDocs, nextDocs, meId, now){
 }
 function firstName(uid){ return String(nameOf(uid) || 'Alguien').trim().split(/\s+/)[0]; }
 function announceAssignments(col, prevDocs, nextDocs){
-  const list = assignmentNotices(prevDocs, nextDocs, me.id, Date.now()).filter(x => !(col === 'tasks' && x.trelloCardId));
+  if (col !== 'tasks') return; // Avisos de asignación solo desde Tareas.
+  const list = assignmentNotices(prevDocs, nextDocs, me.id, Date.now()).filter(x => !x.trelloCardId);
   if (!list.length) return;
   const noun = col === 'tasks' ? 'la tarea' : 'la tarjeta';
   const x = list[0];
@@ -218,20 +219,17 @@ function announceAssignments(col, prevDocs, nextDocs){
 function pushViaWorker(){ return window.PUSH_MODE !== 'firebase'; }
 async function pingNotify(col, id){
   try {
+    if (col !== 'tasks') return; // Push únicamente para tareas.
     if (mode !== 'db' || !FB.auth || !FB.auth.currentUser || !pushViaWorker()) return;
     const token = await FB.auth.currentUser.getIdToken();
     await fetch('/api/notificar', { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + token }, body: JSON.stringify({ col, id }), keepalive: true });
   } catch(e) { /* sin aviso al celular */ }
 }
 function afterAssign(col, id, saved, patch){
-  if (!patch || !patch.asignadoNuevos || !id) return;
+  if (col !== 'tasks' || !patch || !patch.asignadoNuevos || !id) return;
   Promise.resolve(saved).then((ok) => {
     if (ok === false) return;
-    // Una tarea vinculada a Trello y su tarjeta son el mismo trabajo:
-    // la notificación sale por la tarjeta para no duplicarla.
-    const task = col === 'tasks' ? D.tasks.find(t => t.id === id) : null;
-    if (task && task.trelloCardId) pingNotify('cards', task.trelloCardId);
-    else pingNotify(col, id);
+    pingNotify('tasks', id);
   });
 }
 
