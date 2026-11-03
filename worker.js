@@ -305,12 +305,7 @@ async function procesarAvisosVencimiento(ctx, now, origin) {
   const clock = argentinaClock(now);
   // El aviso previo y los diarios se mandan a partir de las 9:00, una sola vez por día/fecha.
   if (clock.hour !== 9) return { revisadas: 0, enviados: 0 };
-  const [tasks, cards, boards] = await Promise.all([
-    fsList(ctx, 'tasks', 1000),
-    fsList(ctx, 'cards', 1000),
-    fsList(ctx, 'boards', 1000)
-  ]);
-  const boardById = new Map(boards.map(b => [b.__id, b]));
+  const tasks = await fsList(ctx, 'tasks', 1000);
   let revisadas = 0, enviados = 0;
   for (const t of tasks) {
     if (!t.fecha || t.estado === 'Hecho') continue;
@@ -320,18 +315,6 @@ async function procesarAvisosVencimiento(ctx, now, origin) {
     revisadas++;
     enviados += await avisarAsignados(ctx, t, 'tasks', String(t.fecha), clock.date, origin, state);
     await fsPatchTaskReminderState(ctx, 'tasks', t.__id, state);
-  }
-  for (const c of cards) {
-    if (!c.vence) continue;
-    const assigned = (Array.isArray(c.asignados) && c.asignados.length) || c.asignado;
-    if (!assigned) continue;
-    // En Trello, el recordatorio solo se detiene al marcar la tarjeta con el tick (c.ok).
-    // Moverla a una columna como "Listo" por sí solo no la da por terminada.
-    if (c.ok) continue;
-    const state = reminderMapValue(c.avisosVencimiento);
-    revisadas++;
-    enviados += await avisarAsignados(ctx, c, 'cards', String(c.vence), clock.date, origin, state);
-    await fsPatchTaskReminderState(ctx, 'cards', c.__id, state);
   }
   return { revisadas, enviados };
 }
