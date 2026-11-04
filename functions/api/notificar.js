@@ -184,7 +184,7 @@ export async function onRequestPost({ request, env }) {
 
     let body; try { body = await request.json(); } catch (e) { return json({ ok: false, error: 'pedido inválido' }, 400); }
     const col = body && body.col, id = body && body.id;
-    if (col !== 'tasks' || !/^[A-Za-z0-9_-]{1,64}$/.test(String(id || ''))) return json({ ok: false, error: 'solo se notifican asignaciones de tareas' }, 400);
+    if ((col !== 'tasks' && col !== 'cards') || !/^[A-Za-z0-9_-]{1,64}$/.test(String(id || ''))) return json({ ok: false, error: 'colección de asignación inválida' }, 400);
 
     const auth = request.headers.get('Authorization') || '';
     const caller = await verifyIdToken(auth.startsWith('Bearer ') ? auth.slice(7) : '', pid);
