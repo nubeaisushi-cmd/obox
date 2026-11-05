@@ -428,6 +428,7 @@ function upsertLocal(col, id, data, merge){
 const mirrorSyncBusy = new Set();
 const mirrorSyncPending = new Map();
 const mirrorSyncPendingCreate = new Map();
+const deletedCardIds = new Set();
 const mirrorTaskId = cardId => 'trello_' + cardId;
 function cardMirrorFields(c){
   const ids = assigneesOf(c);
@@ -438,7 +439,7 @@ function cardMirrorFields(c){
     orden:c.createdAt || Date.now(), creadoPor:c.creadoPor || null };
 }
 async function syncCardMirror(card, createIfMissing=true){
-  if (!card || (myMember && myMember.role === 'cliente')) return;
+  if (!card || deletedCardIds.has(card.id) || (myMember && myMember.role === 'cliente')) return;
   if (mirrorSyncBusy.has(card.id)) {
     mirrorSyncPending.set(card.id, card);
     mirrorSyncPendingCreate.set(card.id, !!createIfMissing || !!mirrorSyncPendingCreate.get(card.id));
@@ -450,8 +451,10 @@ async function syncCardMirror(card, createIfMissing=true){
     let task = D.tasks.find(t => t.id === id || t.trelloCardId === card.id);
     if (!task && mode === 'db') {
       const snap = await dbApi.doc('tasks/' + id).get();
+      if (deletedCardIds.has(card.id) || !D.cards.some(c => c.id === card.id)) return;
       if (snap.exists) { task = { id, ...(snap.data() || {}) }; upsertLocal('tasks', id, task, false); }
     }
+    if (deletedCardIds.has(card.id) || !D.cards.some(c => c.id === card.id)) return;
     if (!task && createIfMissing) {
       const data = cardMirrorFields(card);
       upsertLocal('tasks', id, data, false);
@@ -508,6 +511,23 @@ async function syncTaskMirror(task, patch){
     catch(e) { console.warn('No se pudo sincronizar Tareas con Trello', e); throw e; }
   }
 }
+async function deleteCardAndMirror(card){
+  if (!card) return false;
+  deletedCardIds.add(card.id);
+  const linked = D.tasks.filter(t => t.id === mirrorTaskId(card.id) || t.trelloCardId === card.id);
+  for (const task of linked) {
+    if (!(await wDel('tasks', task.id))) { deletedCardIds.delete(card.id); return false; }
+  }
+  if (mode === 'db' && !linked.some(t => t.id === mirrorTaskId(card.id))) {
+    if (!(await persist('tasks', () => dbApi.doc('tasks/' + mirrorTaskId(card.id)).delete()))) {
+      deletedCardIds.delete(card.id); return false;
+    }
+  }
+  const ok = await wDel('cards', card.id);
+  if (!ok) deletedCardIds.delete(card.id);
+  return ok;
+}
+
 async function persist(col, fn){
   saveLocal(col);
   scheduleRender();
@@ -2136,7 +2156,7 @@ $('bm-del').addEventListener('click', async () => {
   disarmBoardDel(); closeBoardModal();
   if (!id) return;
   const cards = D.cards.filter(c => c.boardId === id);
-  for (const c of cards) { purgeFiles(c); await wDel('cards', c.id); }
+  for (const c of cards) { purgeFiles(c); await deleteCardAndMirror(c); }
   await wDel('boards', id);
   showToast('Tablero eliminado');
 });
@@ -2512,7 +2532,7 @@ $('cm-del').addEventListener('click', () => {
   if (!cmArmed) { cmArmed = true; $('cm-del').textContent = 'Tocá de nuevo para eliminar'; cmTimer = setTimeout(disarmCardDel, 4000); return; }
   const c = curCard();
   disarmCardDel(); closeCard();
-  if (c) { purgeFiles(c); wDel('cards', c.id); showToast('Tarjeta eliminada'); }
+  if (c) { purgeFiles(c); deleteCardAndMirror(c).then(ok => { if (ok) showToast('Tarjeta eliminada'); }); }
 });
 document.addEventListener('keydown', (e) => {
   if (e.key !== 'Escape') return;
