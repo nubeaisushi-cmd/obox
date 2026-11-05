@@ -745,9 +745,17 @@ function dataReset(){
   firstSeen.clear(); loaded = false;
   if (me.isAdmin) subRequests();
 }
+async function cleanupOrphanedTrelloTasks(){
+  const orphans = D.tasks.filter(t => t.trelloCardId && !D.cards.some(c => c.id === t.trelloCardId));
+  for (const task of orphans) await wDel('tasks', task.id);
+}
 function updateLoaded(keys){
   const ok = clientsReady && keys.every(k => SCOPED.every(col => firstSeen.has(col + ':' + k)));
-  if (ok && !loaded) { loaded = true; scheduleRender(); }
+  if (ok && !loaded) {
+    loaded = true;
+    scheduleRender();
+    cleanupOrphanedTrelloTasks();
+  }
 }
 function syncScoped(){
   if (!clientsReady || !myMember) return;
