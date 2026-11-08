@@ -2064,7 +2064,7 @@ function openCardContextMenu(e, card, board, ro){
       field.scrollIntoView({ block:'nearest' });
       field.focus();
       if (typeof field.showPicker === 'function') { try { field.showPicker(); } catch(e) { field.click(); } }
-    });
+    }, false, 'kcard-context-primary');
     section('Mover a columna');
     (board.columns || []).forEach(col => {
       if (col.id === card.columnId) return;
