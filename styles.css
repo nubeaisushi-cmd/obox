@@ -2536,3 +2536,143 @@ button,
   .cal-tools { gap: 5px; }
   #cal-add-ev { padding: 8px 9px; }
 }
+
+/* ---------- Calendario: espacio de trabajo inspirado en Google Calendar ---------- */
+@media (min-width: 761px) {
+  #app:has(#view-calendar:not([hidden])) .wrap {
+    width: 100%;
+    max-width: none;
+    padding: 18px 28px 22px;
+  }
+  #app:has(#view-calendar:not([hidden])) .top-bar {
+    margin-bottom: 18px;
+  }
+  #app:has(#view-calendar:not([hidden])) .today-strip,
+  #app:has(#view-calendar:not([hidden])) .sidebar,
+  #app:has(#view-calendar:not([hidden])) .filter-row,
+  #app:has(#view-calendar:not([hidden])) .toolbar .search {
+    display: none !important;
+  }
+  #app:has(#view-calendar:not([hidden])) .layout {
+    display: block;
+    width: 100%;
+  }
+  #app:has(#view-calendar:not([hidden])) .main-col {
+    width: 100%;
+    min-width: 0;
+  }
+  #app:has(#view-calendar:not([hidden])) .toolbar {
+    margin-bottom: 12px;
+    border-bottom-color: var(--line-soft);
+  }
+  #view-calendar:not([hidden]) {
+    width: 100%;
+    min-width: 0;
+  }
+  #view-calendar .cal-header {
+    min-height: 54px;
+    gap: 16px;
+    margin: 0 0 12px;
+    padding: 0 2px 12px;
+    border-bottom: 1px solid var(--line-soft);
+  }
+  #view-calendar .cal-header h2 {
+    flex: 1 1 auto;
+    min-width: 180px;
+    font-family: var(--font-display);
+    font-size: 25px;
+    font-weight: 650;
+    letter-spacing: -.035em;
+  }
+  #view-calendar .cal-nav { gap: 6px; }
+  #view-calendar .cal-nav .btn {
+    min-height: 36px;
+    padding: 7px 17px;
+    border-radius: 8px;
+  }
+  #view-calendar .cal-nav .icon-btn {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+  }
+  #view-calendar .cal-tools { gap: 12px; }
+  #view-calendar .cal-view-switch {
+    padding: 3px;
+    border-radius: 9px;
+    background: var(--surface-2);
+  }
+  #view-calendar .cal-view-switch button {
+    min-width: 58px;
+    padding: 8px 13px;
+    border-radius: 7px;
+  }
+  #view-calendar .cal-grid-month {
+    height: calc(100dvh - 270px);
+    min-height: 440px;
+    grid-template-rows: 38px;
+    grid-auto-rows: minmax(0, 1fr);
+    border: 1px solid var(--line-soft);
+    border-radius: 10px;
+  }
+  #view-calendar .cal-grid-month .cal-dow {
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    padding: 0 12px;
+    background: var(--surface-2);
+    font-size: 11px;
+    font-weight: 650;
+    letter-spacing: .025em;
+    text-transform: none;
+    border-right: 1px solid var(--line-soft);
+  }
+  #view-calendar .cal-grid-month .cal-dow:nth-child(7) { border-right: 0; }
+  #view-calendar .cal-grid-month .cal-day {
+    min-height: 0;
+    padding: 7px 8px;
+    gap: 5px;
+    background: var(--surface);
+    border-right: 1px solid var(--line-soft);
+    border-bottom: 1px solid var(--line-soft);
+  }
+  #view-calendar .cal-grid-month .cal-day:nth-child(7n) { border-right: 0; }
+  #view-calendar .cal-grid-month .cal-day.today {
+    background: color-mix(in srgb, var(--obox-2) 5%, var(--surface));
+  }
+  #view-calendar .cal-grid-month .cal-daynum {
+    width: 28px;
+    height: 28px;
+    min-width: 28px;
+    font-size: 12px;
+    font-weight: 600;
+  }
+  #view-calendar .cal-grid-month .cal-pills {
+    min-height: 0;
+    overflow: hidden;
+    gap: 3px;
+  }
+  #view-calendar .cal-grid-month .cal-event-block,
+  #view-calendar .cal-grid-month .cal-task-block {
+    min-height: 21px;
+    padding: 3px 6px;
+    border-radius: 5px;
+    font-size: 11px;
+    line-height: 1.35;
+  }
+  #view-calendar .cal-grid-month .cal-event-block {
+    border-left-width: 3px;
+  }
+}
+
+@media (max-width: 760px) {
+  #app:has(#view-calendar:not([hidden])) .today-strip,
+  #app:has(#view-calendar:not([hidden])) .sidebar,
+  #app:has(#view-calendar:not([hidden])) .filter-row,
+  #app:has(#view-calendar:not([hidden])) .toolbar .search {
+    display: none !important;
+  }
+  #app:has(#view-calendar:not([hidden])) .layout { display: block; }
+  #app:has(#view-calendar:not([hidden])) .wrap { padding-bottom: 24px; }
+  #view-calendar .cal-grid-month { grid-auto-rows: minmax(76px, auto); }
+}
+
