@@ -2662,8 +2662,9 @@ body:has(#view-calendar:not([hidden])) .cal-header {
 
 /* ---------- Calendario: transición sutil ---------- */
 #view-calendar {
-  transition: opacity .2s ease;
+  transition: opacity .26s ease-in-out;
 }
 #view-calendar.fade-out {
+  opacity: 0;
   transform: none;
 }
