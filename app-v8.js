@@ -328,7 +328,7 @@ function inAppReminders() {
     due.forEach(m => { fired[e.id + ':' + m + ':' + e.inicio] = now; });
     changed = true;
     const m = Math.min(...due);
-    showToast('🔔 ' + e.hora + ' · ' + e.titulo + ' · ' + (m >= 1440 ? 'mañana' : (m === 60 ? 'en 1 hora' : 'en ' + m + ' min')), null, 12000);
+    showToast('🔔 ' + e.titulo + ' · ' + (m >= 1440 ? 'mañana' : (m === 60 ? 'en 1 hora' : 'en ' + m + ' min')) + ' (' + e.hora + ')', null, 12000);
   });
   if (changed) {
     Object.keys(fired).forEach(k => { if (now - fired[k] > 3 * 86400000) delete fired[k]; });
