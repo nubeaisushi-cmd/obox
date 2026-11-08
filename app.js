@@ -961,8 +961,11 @@ function forceView(k){
 }
 function updateFilterVisibility(){
   const taskView = currentView === 'board' || currentView === 'calendar';
+  const calendarView = currentView === 'calendar';
   $('client-chips').hidden = !taskView;
   $('search-wrap').hidden = !taskView;
+  $('cal-add-ev').hidden = !calendarView || !hasAccess() || !!(myMember && myMember.role === 'cliente');
+  document.querySelector('.cal-side-heading').hidden = !calendarView;
   // El filtro "Solo mis tareas" es exclusivo del tablero, nunca del calendario.
   $('only-mine').hidden = !(currentView === 'board' && teamMode());
 }
