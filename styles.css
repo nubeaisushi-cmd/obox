@@ -2542,84 +2542,114 @@ button,
   #app:has(#view-calendar:not([hidden])) .wrap { width:100%; max-width:none; padding:8px 18px 14px; }
   #app:has(#view-calendar:not([hidden])) .top-bar { min-height:48px; margin:0 0 5px; padding-top:0; padding-bottom:0; }
   #app:has(#view-calendar:not([hidden])) .today-strip,
-  #app:has(#view-calendar:not([hidden])) .sidebar,
   #app:has(#view-calendar:not([hidden])) .toolbar .search { display:none !important; }
   #app:has(#view-calendar:not([hidden])) .layout { display:block; width:100%; }
   #app:has(#view-calendar:not([hidden])) .main-col {
-    display:grid; grid-template-columns:238px minmax(0,1fr); grid-template-rows:auto minmax(0,1fr);
-    column-gap:20px; row-gap:8px; width:100%; min-width:0; align-items:start;
+    display:grid; grid-template-columns:220px minmax(0,1fr); grid-template-rows:auto minmax(0,1fr);
+    column-gap:18px; row-gap:7px; width:100%; min-width:0; align-items:start;
   }
   #app:has(#view-calendar:not([hidden])) .toolbar {
-    grid-column:1 / -1; grid-row:1; min-height:38px; margin:0; padding:0 0 5px;
+    grid-column:1 / -1; grid-row:1; min-height:36px; margin:0; padding:0 0 4px;
     align-items:center; border-bottom:1px solid var(--line-soft);
   }
   #app:has(#view-calendar:not([hidden])) .filter-row {
     grid-column:1; grid-row:2; display:flex !important; flex-direction:column; align-items:stretch;
-    gap:14px; min-width:0; margin:0; padding:4px 10px 12px 2px; border-right:1px solid var(--line-soft);
+    gap:9px; min-width:0; margin:0; padding:4px 10px 12px 2px; border-right:1px solid var(--line-soft);
   }
-  #app:has(#view-calendar:not([hidden])) .cal-side-create {
-    display:block; width:100%; min-height:44px; margin:0 0 5px; border-radius:22px;
-    text-align:left; padding:10px 18px; box-shadow:0 2px 5px rgba(30,25,45,.12);
+  #app:has(#view-calendar:not([hidden])) .cal-side-create,
+  #app:has(#view-calendar:not([hidden])) .cal-side-event {
+    display:flex; width:100%; min-height:39px; margin:0; justify-content:flex-start;
+    border-radius:9px; text-align:left; padding:9px 13px;
   }
-  #app:has(#view-calendar:not([hidden])) .cal-side-heading {
-    display:block; margin:8px 0 0; color:var(--ink-soft); font-size:12px; font-weight:700; letter-spacing:.02em;
+  #app:has(#view-calendar:not([hidden])) .cal-client-filter { position:relative; width:100%; margin-top:5px; }
+  #app:has(#view-calendar:not([hidden])) .cal-client-filter > summary {
+    display:flex; align-items:center; justify-content:space-between; gap:8px; width:100%;
+    min-height:40px; padding:9px 11px; border:1px solid var(--line); border-radius:9px;
+    background:var(--surface); color:var(--ink); font-size:12px; font-weight:650; cursor:pointer;
+    list-style:none;
   }
+  #app:has(#view-calendar:not([hidden])) .cal-client-filter > summary::-webkit-details-marker { display:none; }
+  #app:has(#view-calendar:not([hidden])) .cal-client-filter > summary::after { content:"⌄"; color:var(--ink-soft); font-size:16px; }
+  #app:has(#view-calendar:not([hidden])) .cal-client-filter[open] > summary { border-color:var(--obox-2); }
   #app:has(#view-calendar:not([hidden])) #client-chips {
-    display:flex !important; flex-direction:column; align-items:stretch; gap:5px; width:100%; margin:0;
+    position:absolute; z-index:20; top:calc(100% + 5px); left:0; display:flex !important;
+    flex-direction:column; align-items:stretch; gap:4px; width:100%; max-height: min(55vh,420px);
+    overflow:auto; padding:7px; border:1px solid var(--line); border-radius:10px;
+    background:var(--surface); box-shadow:var(--shadow-pop);
   }
   #app:has(#view-calendar:not([hidden])) #client-chips .client-chip {
-    justify-content:flex-start; width:100%; min-height:36px; padding:8px 11px; border-radius:8px; text-align:left;
+    justify-content:space-between; width:100%; min-height:34px; padding:7px 9px;
+    border-radius:7px; text-align:left;
   }
   #app:has(#view-calendar:not([hidden])) #only-mine { display:none !important; }
+  #app:has(#view-calendar:not([hidden])) .sidebar:not(.collapsed) {
+    display:flex !important; position:fixed; z-index:70; top:72px; left:18px;
+    width:min(340px,calc(100vw - 36px)); max-height:calc(100dvh - 88px);
+    overflow:auto; padding:0; background:var(--bg); border-radius:14px;
+    box-shadow:var(--shadow-pop);
+  }
+  #app:has(#view-calendar:not([hidden])) .sidebar.collapsed { display:none !important; }
+  #app:has(#view-calendar:not([hidden])) #add-form.card { margin:0; width:100%; }
   #view-calendar:not([hidden]) { grid-column:2; grid-row:2; width:100%; min-width:0; }
   #view-calendar .cal-header {
-    min-height:42px; gap:12px; margin:0 0 8px; padding:0 2px 8px; border-bottom:1px solid var(--line-soft);
+    min-height:40px; gap:12px; margin:0 0 7px; padding:0 2px 7px; border-bottom:1px solid var(--line-soft);
   }
   #view-calendar .cal-header h2 {
     flex:1 1 auto; min-width:160px; font-family:var(--font-display); font-size:23px;
     font-weight:650; letter-spacing:-.035em;
   }
   #view-calendar .cal-nav { gap:5px; }
-  #view-calendar .cal-nav .btn { min-height:34px; padding:6px 14px; border-radius:8px; }
-  #view-calendar .cal-nav .icon-btn { width:34px; height:34px; border-radius:50%; }
-  #view-calendar .cal-tools { gap:10px; }
+  #view-calendar .cal-nav .btn { min-height:33px; padding:6px 13px; border-radius:8px; }
+  #view-calendar .cal-nav .icon-btn { width:33px; height:33px; border-radius:50%; }
+  #view-calendar .cal-tools { gap:9px; }
   #view-calendar .cal-view-switch { padding:3px; border-radius:9px; background:var(--surface-2); }
-  #view-calendar .cal-view-switch button { min-width:55px; padding:7px 11px; border-radius:7px; }
+  #view-calendar .cal-view-switch button { min-width:54px; padding:7px 10px; border-radius:7px; }
   #view-calendar .cal-grid-month {
-    height:calc(100dvh - 160px); min-height:430px; grid-template-rows:34px;
+    height:calc(100dvh - 145px); min-height:600px; grid-template-rows:32px;
     grid-auto-rows:minmax(0,1fr); border:1px solid var(--line-soft); border-radius:9px;
   }
   #view-calendar .cal-grid-month .cal-dow {
-    display:flex; align-items:center; justify-content:flex-start; padding:0 11px;
+    display:flex; align-items:center; justify-content:flex-start; padding:0 10px;
     background:var(--surface-2); font-size:11px; font-weight:650; letter-spacing:.025em;
     text-transform:none; border-right:1px solid var(--line-soft);
   }
   #view-calendar .cal-grid-month .cal-dow:nth-child(7) { border-right:0; }
   #view-calendar .cal-grid-month .cal-day {
-    min-height:0; padding:6px 7px; gap:4px; background:var(--surface);
+    min-height:0; padding:4px 5px; gap:2px; background:var(--surface);
     border-right:1px solid var(--line-soft); border-bottom:1px solid var(--line-soft);
   }
   #view-calendar .cal-grid-month .cal-day:nth-child(7n) { border-right:0; }
   #view-calendar .cal-grid-month .cal-day.today { background:color-mix(in srgb,var(--obox-2) 5%,var(--surface)); }
-  #view-calendar .cal-grid-month .cal-daynum { width:27px; height:27px; min-width:27px; font-size:12px; font-weight:600; }
-  #view-calendar .cal-grid-month .cal-pills { min-height:0; overflow:hidden; gap:3px; }
+  #view-calendar .cal-grid-month .cal-day-head { min-height:24px; }
+  #view-calendar .cal-grid-month .cal-daynum { width:25px; height:25px; min-width:25px; font-size:12px; font-weight:600; }
+  #view-calendar .cal-grid-month .cal-pills { min-height:0; height:auto; overflow:visible !important; gap:2px; }
   #view-calendar .cal-grid-month .cal-event-block,
   #view-calendar .cal-grid-month .cal-task-block {
-    min-height:21px; padding:3px 6px; border-radius:5px; font-size:11px; line-height:1.35;
+    min-height:19px; height:19px; padding:2px 5px; border-radius:4px; font-size:10.5px; line-height:1.25;
   }
-  #view-calendar .cal-grid-month .cal-event-block { border-left-width:3px; }
-  #view-calendar .cal-grid-week, #view-calendar .cal-grid-day { min-height:calc(100dvh - 160px); }
+  #view-calendar .cal-grid-month .cal-more { min-height:15px; padding:0 5px; line-height:15px; }
+  #view-calendar .cal-grid-week, #view-calendar .cal-grid-day { min-height:calc(100dvh - 145px); }
 }
 @media (max-width:760px) {
   #app:has(#view-calendar:not([hidden])) .today-strip,
-  #app:has(#view-calendar:not([hidden])) .sidebar,
   #app:has(#view-calendar:not([hidden])) .toolbar .search { display:none !important; }
   #app:has(#view-calendar:not([hidden])) .layout { display:block; }
   #app:has(#view-calendar:not([hidden])) .wrap { padding:8px 10px 18px; }
   #app:has(#view-calendar:not([hidden])) .filter-row {
-    display:flex !important; flex-direction:column; gap:8px; margin:0 0 12px;
+    display:flex !important; flex-direction:row; flex-wrap:wrap; gap:7px; margin:0 0 9px;
   }
   #app:has(#view-calendar:not([hidden])) .cal-side-create,
-  #app:has(#view-calendar:not([hidden])) .cal-side-heading { display:block; }
-  #view-calendar .cal-grid-month { grid-auto-rows:minmax(76px,auto); }
+  #app:has(#view-calendar:not([hidden])) .cal-side-event { display:flex; width:auto; }
+  #app:has(#view-calendar:not([hidden])) .cal-client-filter { position:relative; }
+  #app:has(#view-calendar:not([hidden])) #client-chips {
+    position:absolute; z-index:20; top:calc(100% + 5px); left:0; display:flex !important;
+    flex-direction:column; gap:4px; min-width:210px; max-height:55vh; overflow:auto;
+    padding:7px; border:1px solid var(--line); border-radius:10px; background:var(--surface); box-shadow:var(--shadow-pop);
+  }
+  #app:has(#view-calendar:not([hidden])) .sidebar:not(.collapsed) {
+    display:flex !important; position:fixed; z-index:70; inset:65px 10px auto;
+    max-height:calc(100dvh - 75px); overflow:auto; padding:0;
+  }
+  #app:has(#view-calendar:not([hidden])) .sidebar.collapsed { display:none !important; }
+  #view-calendar .cal-grid-month { grid-auto-rows:minmax(76px,auto); height:auto; min-height:0; }
 }
