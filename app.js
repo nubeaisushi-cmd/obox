@@ -1691,7 +1691,7 @@ function renderCalendarMonth(grid, pool, todayS) {
   const startWeekday = (new Date(y, m, 1).getDay() + 6) % 7;
   const daysInMonth = new Date(y, m + 1, 0).getDate();
   const prevMonthDays = new Date(y, m, 0).getDate();
-  const totalCells = Math.ceil((startWeekday + daysInMonth) / 7) * 7;
+  const totalCells = 42; // Seis filas parejas para que todos los meses ocupen el mismo alto.
   for (let i = 0; i < totalCells; i++) {
     const dayNum = i - startWeekday + 1;
     let cellDate, muted = false;
