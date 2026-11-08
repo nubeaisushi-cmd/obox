@@ -609,9 +609,27 @@ async function initStore() {
     try { await FB.db.enablePersistence({ synchronizeTabs: true }); } catch(e) {}
   } catch(e) { setGate(null); startLocal('offline'); return; }
   dbApi = FB.db; mode = 'db';
-  FB.auth.onAuthStateChanged((user) => {
+  FB.auth.onAuthStateChanged(async (user) => {
     if (!user) { sessionUid = null; setGate('login'); return; }
     if (sessionUid === user.uid) return;
+    // Las cuentas de correo/contraseña son exclusivamente para administradores.
+    const passwordLogin = (user.providerData || []).some(p => p.providerId === 'password');
+    if (passwordLogin) {
+      try {
+        const adminDoc = await FB.db.doc('members/' + user.uid).get();
+        if (!adminDoc.exists || (adminDoc.data() || {}).role !== 'admin') {
+          await FB.auth.signOut();
+          setGate('login');
+          showToast('Este acceso es exclusivo para administradores. Si necesitás entrar como miembro, usá Google.', null, 6500);
+          return;
+        }
+      } catch(e) {
+        await FB.auth.signOut();
+        setGate('login');
+        showToast('No pude verificar los permisos de administrador. Probá de nuevo.', null, 6000);
+        return;
+      }
+    }
     sessionUid = user.uid;
     me.id = user.uid; me.name = user.displayName || user.email || ''; me.avatar = user.photoURL || ''; me.email = user.email || '';
     me.isAdmin = false; me.isOwner = false; booting = false;
@@ -632,6 +650,28 @@ async function signIn(){
     else if (code === 'auth/unauthorized-domain') showToast('Este dominio no está autorizado en Firebase. Mirá el LEEME, paso 7.', null, 8000);
     else showToast('No pude iniciar sesión. Probá de nuevo.');
   }
+}
+async function signInAdmin(email, password){
+  if (!email || !password) { showToast('Completá el correo y la contraseña.'); return; }
+  try { await FB.auth.signInWithEmailAndPassword(email, password); }
+  catch(e) {
+    const code = (e && e.code) || '';
+    if (code === 'auth/invalid-credential' || code === 'auth/wrong-password' || code === 'auth/user-not-found') showToast('Correo o contraseña incorrectos.', null, 5000);
+    else if (code === 'auth/too-many-requests') showToast('Hubo demasiados intentos. Esperá un momento y probá de nuevo.', null, 6000);
+    else if (code === 'auth/operation-not-allowed') showToast('Falta activar Correo/contraseña en Firebase Authentication.', null, 7000);
+    else showToast('No pude iniciar sesión como administrador. Probá de nuevo.', null, 6000);
+  }
+}
+function showAdminLoginForm(){
+  const acts = $('gate-actions');
+  acts.replaceChildren();
+  const email = h('input', { class:'ctl', type:'email', placeholder:'Correo del administrador', autocomplete:'username', required:true, 'aria-label':'Correo del administrador' });
+  const password = h('input', { class:'ctl', type:'password', placeholder:'Contraseña', autocomplete:'current-password', required:true, 'aria-label':'Contraseña' });
+  acts.append(h('form', { class:'gate-admin-form', onsubmit:(e) => { e.preventDefault(); signInAdmin(email.value.trim(), password.value); } },
+    email, password,
+    h('button', { type:'submit', class:'btn block', text:'Entrar como administrador' }),
+    h('button', { type:'button', class:'btn secondary sm', text:'Volver', onclick:() => setGate('login') })));
+  email.focus();
 }
 async function signOutNow(){
   try { await FB.auth.signOut(); } catch(e) {}
@@ -658,12 +698,23 @@ function watchMe(){
         $('app').hidden = false;
         currentView = 'board';
         sidebarOpen = false;
+      } else if (me.isAdmin) {
+        // Los administradores no completan Daily: entran directamente a Trello.
+        $('cover').hidden = true;
+        $('app').hidden = false;
+        if (currentView !== 'boards') {
+          const previous = VIEWS[currentView] && $(VIEWS[currentView].id);
+          if (previous) previous.hidden = true;
+          currentView = 'boards';
+          $(VIEWS.boards.id).hidden = false;
+        }
       }
       startData();
       if (was !== me.isAdmin) { dataReset(); }
       syncScoped();
       paintGreeting();
       scheduleRender();
+      if (me.isAdmin) { renderTabs(); updateFilterVisibility(); applyLayout(); renderBoards(); }
       return;
     }
     if (hadMember) { location.reload(); return; } // me quitaron del equipo
@@ -816,8 +867,11 @@ function setGate(kind){
     T.title.textContent = 'Un momento…'; T.text.textContent = '';
   } else if (kind === 'login') {
     T.title.textContent = 'Entrá a Obox';
-    T.text.textContent = 'Usá tu cuenta de Google. Si todavía no sos parte del equipo, vas a poder pedir acceso.';
-    acts.append(h('button', { type: 'button', class: 'btn block', text: 'Continuar con Google', onclick: signIn }));
+    T.text.textContent = 'Miembros: ingresen con Google. Administradores: usen su correo y contraseña de Obox.';
+    acts.append(
+      h('button', { type:'button', class:'btn block', text:'Continuar con Google', onclick:signIn }),
+      h('button', { type:'button', class:'btn secondary block', text:'Acceso administrador', onclick:showAdminLoginForm })
+    );
   } else if (kind === 'pending') {
     T.title.textContent = 'Esperando que te den acceso';
     T.text.textContent = requestFailed
@@ -2907,7 +2961,7 @@ function backupCard(){
 let lastDay = todayStr();
 function checkRollover() {
   const t = todayStr();
-  if (myMember && myMember.role === 'cliente') { lastDay = t; return; }
+  if ((myMember && myMember.role === 'cliente') || me.isAdmin) { lastDay = t; return; }
   if (t === lastDay) return;
   lastDay = t;
   dailyDirty = false; weekDirty = false;
