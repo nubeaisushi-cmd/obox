@@ -421,6 +421,9 @@ label.check input { accent-color: var(--accent); width: 16px; height: 16px; marg
 .gate-card p { margin: 0 0 10px; color: var(--ink-soft); line-height: 1.55; }
 .gate-card .gate-who { display: inline-flex; align-items: center; gap: 8px; margin: 6px 0 14px; padding: 5px 14px 5px 5px; border-radius: 99px; background: var(--surface-2); border: 1px solid var(--line); font-weight: 600; }
 .gate-card .btn.block { margin-top: 6px; }
+.gate-admin-form { display:grid; gap:10px; width:100%; margin-top:10px; }
+.gate-admin-form .ctl { width:100%; }
+.gate-admin-form .btn { width:100%; }
 .gate-theme { position: fixed; top: 14px; right: 14px; }
 
 /* ---------- Tableros (Trello) ---------- */
