@@ -1542,7 +1542,8 @@ function swap(hideEl, showEl, before, after) {
   };
   if (reduceMotion) { reveal(); return; }
   hideEl.classList.add('fade-out');
-  setTimeout(reveal, 180);
+  const duration = (hideEl.id === 'view-calendar' || showEl.id === 'view-calendar') ? 280 : 180;
+  setTimeout(reveal, duration);
 }
 $('btn-enter-app').addEventListener('click', () => { if (!dailyDone()) return; swap($('cover'), $('app'), null, () => window.scrollTo(0, 0)); });
 $('btn-signout').addEventListener('click', () => { if (confirm('¿Cerrar sesión en este dispositivo?')) signOutNow(); });
