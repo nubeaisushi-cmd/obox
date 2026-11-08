@@ -1692,6 +1692,8 @@ function renderCalendarMonth(grid, pool, todayS) {
   const daysInMonth = new Date(y, m + 1, 0).getDate();
   const prevMonthDays = new Date(y, m, 0).getDate();
   const totalCells = Math.ceil((startWeekday + daysInMonth) / 7) * 7;
+  grid.style.setProperty('--cal-weeks', String(totalCells / 7));
+  const canAddDayEvent = hasAccess() && !(myMember && myMember.role === 'cliente');
   for (let i = 0; i < totalCells; i++) {
     const dayNum = i - startWeekday + 1;
     let cellDate, muted = false;
@@ -1713,6 +1715,19 @@ function renderCalendarMonth(grid, pool, todayS) {
     num.className = 'cal-daynum';
     num.textContent = cellDate.getDate();
     head.appendChild(num);
+    if (canAddDayEvent) {
+      const addEvent = document.createElement('button');
+      addEvent.type = 'button';
+      addEvent.className = 'cal-day-add-event';
+      addEvent.textContent = '+';
+      addEvent.title = 'Crear evento este día';
+      addEvent.setAttribute('aria-label', 'Crear evento el ' + fmtLong(iso));
+      addEvent.addEventListener('click', (e) => {
+        e.stopPropagation();
+        if (typeof openEventModal === 'function') openEventModal(iso, null);
+      });
+      head.appendChild(addEvent);
+    }
     cell.appendChild(head);
     const pills = document.createElement('div');
     pills.className = 'cal-pills';
