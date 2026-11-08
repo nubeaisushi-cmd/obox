@@ -1672,7 +1672,7 @@ function calEventNode(ev, iso, timed) {
   const el = document.createElement('button');
   el.type = 'button';
   el.className = 'cal-event-block' + (timed ? ' is-timed' : '');
-  el.textContent = (timed && ev.hora ? ev.hora + ' ' : '') + (ev.titulo || 'Evento');
+  el.textContent = (ev.hora ? ev.hora + ' ' : '') + (ev.titulo || 'Evento');
   el.title = (ev.hora ? ev.hora + (ev.horaFin ? '–' + ev.horaFin : '') + ' · ' : '') + (ev.titulo || 'Evento');
   el.addEventListener('click', (e) => {
     e.stopPropagation();
