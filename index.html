@@ -284,10 +284,20 @@
 
       <div id="view-calendar" hidden>
         <div class="cal-header">
-          <button type="button" class="icon-btn" id="cal-prev" aria-label="Mes anterior"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 6l-6 6 6 6"/></svg></button>
+          <div class="cal-nav">
+            <button type="button" class="btn secondary sm" id="cal-today">Hoy</button>
+            <button type="button" class="icon-btn" id="cal-prev" aria-label="Anterior"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 6l-6 6 6 6"/></svg></button>
+            <button type="button" class="icon-btn" id="cal-next" aria-label="Siguiente"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg></button>
+          </div>
           <h2 id="cal-title">—</h2>
-          <button type="button" class="icon-btn" id="cal-next" aria-label="Mes siguiente"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg></button>
-          <button type="button" class="btn secondary sm" id="cal-today" style="margin-left:auto;">Hoy</button>
+          <div class="cal-tools">
+            <button type="button" class="btn sm" id="cal-add-ev">+ Evento</button>
+            <div class="cal-view-switch" role="group" aria-label="Vista del calendario">
+              <button type="button" data-cal-view="day" aria-pressed="false">Día</button>
+              <button type="button" data-cal-view="week" aria-pressed="false">Semana</button>
+              <button type="button" data-cal-view="month" aria-pressed="true" class="on">Mes</button>
+            </div>
+          </div>
         </div>
         <div class="cal-grid" id="cal-grid"></div>
       </div>
