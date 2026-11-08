@@ -2028,6 +2028,75 @@ document.addEventListener('keydown', e => {
     }
   }
 }, true);
+function closeCardContextMenu(){
+  const old = document.querySelector('.kcard-context-menu');
+  if (old) old.remove();
+  document.removeEventListener('pointerdown', closeCardContextMenuOutside, true);
+  document.removeEventListener('keydown', closeCardContextMenuKey);
+}
+function closeCardContextMenuOutside(e){
+  if (!e.target.closest || !e.target.closest('.kcard-context-menu')) closeCardContextMenu();
+}
+function closeCardContextMenuKey(e){
+  if (e.key === 'Escape') { e.preventDefault(); closeCardContextMenu(); }
+}
+function openCardContextMenu(e, card, board, ro){
+  e.preventDefault();
+  e.stopPropagation();
+  closeCardContextMenu();
+  const menu = h('div', { class:'kcard-context-menu', role:'menu', 'aria-label':'Acciones de tarjeta' });
+  const item = (label, action, disabled) => {
+    const b = h('button', { type:'button', class:'kcard-context-item', role:'menuitem', disabled:!!disabled, text:label,
+      onclick:() => { closeCardContextMenu(); action(); } });
+    menu.append(b);
+  };
+  const section = (label) => menu.append(h('div', { class:'kcard-context-heading', text:label }));
+  item('Abrir tarjeta', () => openCard(card.id));
+  if (!ro) {
+    if (teamMode()) item('Asignar a alguien', () => {
+      openCard(card.id);
+      const trigger = $('cm-asignado').querySelector('.asg-trigger');
+      if (trigger) { $('cm-asg-wrap').scrollIntoView({ block:'nearest' }); trigger.click(); }
+    }, !memberChoices(board.cliente).length);
+    item('Cambiar fecha de vencimiento', () => {
+      openCard(card.id);
+      const field = $('cm-vence');
+      field.scrollIntoView({ block:'nearest' });
+      field.focus();
+      if (typeof field.showPicker === 'function') { try { field.showPicker(); } catch(e) { field.click(); } }
+    });
+    section('Mover a columna');
+    (board.columns || []).forEach(col => {
+      if (col.id === card.columnId) return;
+      item(col.title, () => wUpd('cards', card.id, { columnId:col.id, orden:nextOrden(card.boardId, col.id) }));
+    });
+    section('Etiquetas');
+    LABELS.forEach(label => {
+      const active = (card.labels || []).includes(label.id);
+      const b = h('button', { type:'button', class:'kcard-context-item kcard-context-label' + (active ? ' active' : ''),
+        role:'menuitemcheckbox', 'aria-checked':active,
+        onclick:() => {
+          closeCardContextMenu();
+          const current = D.cards.find(x => x.id === card.id);
+          if (!current) return;
+          const labels = new Set(current.labels || []);
+          labels.has(label.id) ? labels.delete(label.id) : labels.add(label.id);
+          wUpd('cards', card.id, { labels:[...labels] });
+        } },
+        h('span', { class:'kcard-context-dot', style:'background:' + label.color }), label.name,
+        h('span', { class:'kcard-context-check', text:active ? '✓' : '' }));
+      menu.append(b);
+    });
+    menu.append(h('div', { class:'kcard-context-separator' }));
+    item(card.ok || card.hecho ? 'Marcar como pendiente' : 'Marcar como hecha', () => wUpd('cards', card.id, { ok:!(card.ok || card.hecho), hecho:!(card.ok || card.hecho) }));
+  }
+  document.body.append(menu);
+  const pad = 8, rect = menu.getBoundingClientRect();
+  menu.style.left = Math.max(pad, Math.min(e.clientX, window.innerWidth - rect.width - pad)) + 'px';
+  menu.style.top = Math.max(pad, Math.min(e.clientY, window.innerHeight - rect.height - pad)) + 'px';
+  document.addEventListener('pointerdown', closeCardContextMenuOutside, true);
+  document.addEventListener('keydown', closeCardContextMenuKey);
+}
 function kcardEl(c, board, isLast, ro){
   const total = (c.checklist || []).length, done = (c.checklist || []).filter(x => x.d).length;
   const labels = (c.labels || []).map(id => LABELS.find(l => l.id === id)).filter(Boolean);
@@ -2097,6 +2166,7 @@ if (coverImg) {
   });
 }
   el.addEventListener('click', () => openCard(c.id));
+  el.addEventListener('contextmenu', (e) => openCardContextMenu(e, c, board, ro));
   el.addEventListener('keydown', (e) => { if (e.target === el && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); openCard(c.id); } });
   if (!ro) {
     el.addEventListener('dragstart', (e) => { dragging = true; el.classList.add('dragging'); try { e.dataTransfer.effectAllowed = 'move'; e.dataTransfer.setData('text/plain', c.id); } catch(x) {} });
