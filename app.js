@@ -706,15 +706,10 @@ function watchMe(){
         currentView = 'board';
         sidebarOpen = false;
       } else if (me.isAdmin) {
-        // Los administradores no completan Daily: entran directamente a Trello.
+        // Los administradores también ingresan primero al Tablero.
         $('cover').hidden = true;
         $('app').hidden = false;
-        if (currentView !== 'boards') {
-          const previous = VIEWS[currentView] && $(VIEWS[currentView].id);
-          if (previous) previous.hidden = true;
-          currentView = 'boards';
-          $(VIEWS.boards.id).hidden = false;
-        }
+        forceView('board');
       }
       startData();
       if (was !== me.isAdmin) { dataReset(); }
