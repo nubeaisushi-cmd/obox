@@ -1830,6 +1830,7 @@ function renderCalendar() {
   const todayS = todayStr();
   const pool = D.tasks.filter(t => t.id !== pendingDeleteId && clientVisible(t.cliente) && !t.hideFromCalendar).filter(matches);
   calSetTitle();
+  if ($('cal-add-ev')) $('cal-add-ev').hidden = !hasAccess() || !!(myMember && myMember.role === 'cliente');
   if (calView === 'month') renderCalendarMonth(grid, pool, todayS);
   else renderCalendarTime(grid, pool, todayS);
   document.querySelectorAll('[data-cal-view]').forEach(b => {
