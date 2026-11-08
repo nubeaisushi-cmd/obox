@@ -1559,8 +1559,10 @@ function setView(target) {
   if (!allowedViews().includes(target)) return;
   const hideEl = $(VIEWS[currentView].id), showEl = $(VIEWS[target].id);
   currentView = target; tabsSig = '';
-  renderTabs(); updateFilterVisibility(); applyLayout();
+  renderTabs();
   swap(hideEl, showEl, () => {
+    updateFilterVisibility();
+    applyLayout();
     if (target === 'calendar') renderCalendar();
     if (target === 'week') renderWeek();
     if (target === 'boards') renderBoards();
