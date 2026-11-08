@@ -1726,17 +1726,19 @@ function renderCalendarMonth(grid, pool, todayS) {
     cell.appendChild(head);
     const pills = document.createElement('div');
     pills.className = 'cal-pills';
-    const items = [];
-    dayEv.forEach(e => items.push({ type: 'event', value: e }));
-    dayTasks.forEach(t => items.push({ type: 'task', value: t }));
-    items.slice(0, 4).forEach(item => {
+    const visibleItems = [
+      ...dayEv.slice(0, 1).map(value => ({ type: 'event', value })),
+      ...dayTasks.slice(0, 3).map(value => ({ type: 'task', value }))
+    ];
+    const totalItems = dayEv.length + dayTasks.length;
+    visibleItems.forEach(item => {
       pills.appendChild(item.type === 'event' ? calEventNode(item.value, iso, false) : calTaskNode(item.value, true));
     });
     cell.appendChild(pills);
-    if (items.length > 4) {
+    if (totalItems > visibleItems.length) {
       const more = document.createElement('div');
       more.className = 'cal-more';
-      more.textContent = '+' + (items.length - 4) + ' más';
+      more.textContent = '+' + (totalItems - visibleItems.length) + ' más';
       cell.appendChild(more);
     }
     cell.addEventListener('click', () => openDayModal(iso));
