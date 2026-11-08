@@ -1316,9 +1316,6 @@ function renderClientChips(allOpen) {
     btn.setAttribute('aria-pressed', active);
     btn.querySelector('.chip-n').textContent = c ? allOpen.filter(t => t.cliente === c).length : allOpen.length;
   });
-  const selected = cs.find(c => c.id === filterClient);
-  const summary = $('cal-client-summary');
-  if (summary) summary.textContent = 'Filtrar por cliente · ' + (selected ? selected.name : 'Todos');
 }
 function renderCoverStats(nAtrasadas, nHoy, nTop3) {
   const el = $('cover-stats');
@@ -1558,18 +1555,11 @@ $('btn-sidebar-toggle').addEventListener('click', () => {
   applyLayout();
   if (sidebarOpen) $('f-tarea').focus();
 });
-$('cal-add-task').addEventListener('click', () => {
-  sidebarOpen = true;
-  applyLayout();
-  $('f-tarea').focus();
-});
 function setView(target) {
   if (target === currentView || swapping) return;
   if (!allowedViews().includes(target)) return;
   const hideEl = $(VIEWS[currentView].id), showEl = $(VIEWS[target].id);
   currentView = target; tabsSig = '';
-  if (target === 'calendar') sidebarOpen = false;
-  else if (target === 'board') sidebarOpen = true;
   renderTabs(); updateFilterVisibility(); applyLayout();
   swap(hideEl, showEl, () => {
     if (target === 'calendar') renderCalendar();
@@ -1726,19 +1716,17 @@ function renderCalendarMonth(grid, pool, todayS) {
     cell.appendChild(head);
     const pills = document.createElement('div');
     pills.className = 'cal-pills';
-    const visibleItems = [
-      ...dayEv.slice(0, 1).map(value => ({ type: 'event', value })),
-      ...dayTasks.slice(0, 3).map(value => ({ type: 'task', value }))
-    ];
-    const totalItems = dayEv.length + dayTasks.length;
-    visibleItems.forEach(item => {
+    const items = [];
+    dayEv.forEach(e => items.push({ type: 'event', value: e }));
+    dayTasks.forEach(t => items.push({ type: 'task', value: t }));
+    items.slice(0, 4).forEach(item => {
       pills.appendChild(item.type === 'event' ? calEventNode(item.value, iso, false) : calTaskNode(item.value, true));
     });
     cell.appendChild(pills);
-    if (totalItems > visibleItems.length) {
+    if (items.length > 4) {
       const more = document.createElement('div');
       more.className = 'cal-more';
-      more.textContent = '+' + (totalItems - visibleItems.length) + ' más';
+      more.textContent = '+' + (items.length - 4) + ' más';
       cell.appendChild(more);
     }
     cell.addEventListener('click', () => openDayModal(iso));
