@@ -2536,3 +2536,128 @@ button,
   .cal-tools { gap: 5px; }
   #cal-add-ev { padding: 8px 9px; }
 }
+
+
+/* ---------- Calendario: cabecera compacta y espacio de trabajo ---------- */
+@media (min-width: 761px) {
+  body:has(#view-calendar:not([hidden])) {
+    overflow-x: hidden;
+  }
+
+  body:has(#view-calendar:not([hidden])) #app .wrap {
+    width: 100%;
+    max-width: none;
+    margin: 0;
+    padding: 14px 22px 24px;
+  }
+
+  body:has(#view-calendar:not([hidden])) .top-bar {
+    margin-bottom: 10px;
+    padding-bottom: 10px;
+    gap: 12px;
+    border-bottom: 1px solid var(--line);
+  }
+
+  body:has(#view-calendar:not([hidden])) .today-strip,
+  body:has(#view-calendar:not([hidden])) .sidebar {
+    display: none !important;
+  }
+
+  body:has(#view-calendar:not([hidden])) .layout {
+    display: block;
+    width: 100%;
+    min-width: 0;
+  }
+
+  body:has(#view-calendar:not([hidden])) .main-col,
+  body:has(#view-calendar:not([hidden])) #view-calendar {
+    width: 100%;
+    max-width: none;
+    min-width: 0;
+  }
+
+  body:has(#view-calendar:not([hidden])) .toolbar {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 8px 14px;
+    margin-bottom: 8px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid var(--line);
+  }
+
+  body:has(#view-calendar:not([hidden])) .view-switch {
+    gap: 4px;
+  }
+
+  body:has(#view-calendar:not([hidden])) .tab-btn {
+    padding: 8px 13px;
+    font-size: 13px;
+  }
+
+  body:has(#view-calendar:not([hidden])) .search {
+    margin-left: auto;
+    max-width: 260px;
+  }
+
+  body:has(#view-calendar:not([hidden])) .filter-row {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 7px 10px;
+    margin: 0 0 10px;
+    padding: 0 0 8px;
+    border-bottom: 1px solid var(--line-soft);
+  }
+
+  body:has(#view-calendar:not([hidden])) .cal-header {
+    align-items: center;
+    gap: 10px 14px;
+    margin: 0 0 10px;
+    padding: 0 0 9px;
+  }
+
+  body:has(#view-calendar:not([hidden])) .cal-header h2 {
+    font-size: 22px;
+  }
+
+  body:has(#view-calendar:not([hidden])) .cal-nav,
+  body:has(#view-calendar:not([hidden])) .cal-tools {
+    gap: 6px;
+  }
+
+  body:has(#view-calendar:not([hidden])) .cal-nav .btn,
+  body:has(#view-calendar:not([hidden])) .cal-nav .icon-btn {
+    min-height: 34px;
+    height: 34px;
+  }
+
+  body:has(#view-calendar:not([hidden])) .cal-view-switch button {
+    padding: 6px 10px;
+  }
+}
+
+@media (max-width: 760px) {
+  body:has(#view-calendar:not([hidden])) .today-strip,
+  body:has(#view-calendar:not([hidden])) .sidebar {
+    display: none !important;
+  }
+
+  body:has(#view-calendar:not([hidden])) #app .wrap {
+    padding: 10px 12px 24px;
+  }
+
+  body:has(#view-calendar:not([hidden])) .toolbar {
+    margin-bottom: 8px;
+  }
+
+  body:has(#view-calendar:not([hidden])) .filter-row {
+    margin-bottom: 8px;
+  }
+
+  body:has(#view-calendar:not([hidden])) .cal-header {
+    gap: 8px;
+    margin-bottom: 10px;
+    padding-bottom: 9px;
+  }
+}
