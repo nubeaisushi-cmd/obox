@@ -2051,13 +2051,13 @@ function openCardContextMenu(e, card, board, ro){
     menu.append(b);
   };
   const section = (label) => menu.append(h('div', { class:'kcard-context-heading', text:label }));
-  item('Abrir tarjeta', () => openCard(card.id));
+  item('Abrir tarjeta', () => openCard(card.id), false, 'kcard-context-primary');
   if (!ro) {
     if (teamMode()) item('Asignar a alguien', () => {
       openCard(card.id);
       const trigger = $('cm-asignado').querySelector('.asg-trigger');
       if (trigger) { $('cm-asg-wrap').scrollIntoView({ block:'nearest' }); trigger.click(); }
-    }, !memberChoices(board.cliente).length);
+    }, !memberChoices(board.cliente).length, 'kcard-context-primary');
     item('Cambiar fecha de vencimiento', () => {
       openCard(card.id);
       const field = $('cm-vence');
