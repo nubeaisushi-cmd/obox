@@ -2447,9 +2447,11 @@ function askAttachmentNames(files){
       )
     );
     backdrop.append(panel);
-    function finish(value){ backdrop.remove(); resolve(value); }
+    let onKey;
+    function finish(value){ if (!backdrop.isConnected) return; document.removeEventListener('keydown', onKey); backdrop.remove(); resolve(value); }
     backdrop.addEventListener('click', e => { if (e.target === backdrop) finish(null); });
-    document.addEventListener('keydown', function onKey(e){ if (e.key === 'Escape' && backdrop.isConnected) { document.removeEventListener('keydown', onKey); finish(null); } });
+    onKey = e => { if (e.key === 'Escape') finish(null); };
+    document.addEventListener('keydown', onKey);
     document.body.append(backdrop);
     const first = panel.querySelector('.at-rename-input');
     if (first) { first.focus(); first.select(); }
