@@ -1316,6 +1316,9 @@ function renderClientChips(allOpen) {
     btn.setAttribute('aria-pressed', active);
     btn.querySelector('.chip-n').textContent = c ? allOpen.filter(t => t.cliente === c).length : allOpen.length;
   });
+  const selected = cs.find(c => c.id === filterClient);
+  const summary = $('cal-client-summary');
+  if (summary) summary.textContent = 'Filtrar por cliente · ' + (selected ? selected.name : 'Todos');
 }
 function renderCoverStats(nAtrasadas, nHoy, nTop3) {
   const el = $('cover-stats');
@@ -1555,11 +1558,18 @@ $('btn-sidebar-toggle').addEventListener('click', () => {
   applyLayout();
   if (sidebarOpen) $('f-tarea').focus();
 });
+$('cal-add-task').addEventListener('click', () => {
+  sidebarOpen = true;
+  applyLayout();
+  $('f-tarea').focus();
+});
 function setView(target) {
   if (target === currentView || swapping) return;
   if (!allowedViews().includes(target)) return;
   const hideEl = $(VIEWS[currentView].id), showEl = $(VIEWS[target].id);
   currentView = target; tabsSig = '';
+  if (target === 'calendar') sidebarOpen = false;
+  else if (target === 'board') sidebarOpen = true;
   renderTabs(); updateFilterVisibility(); applyLayout();
   swap(hideEl, showEl, () => {
     if (target === 'calendar') renderCalendar();
