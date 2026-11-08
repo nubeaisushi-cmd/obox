@@ -631,7 +631,7 @@ async function initStore() {
       }
     }
     sessionUid = user.uid;
-    me.id = user.uid; me.name = user.displayName || user.email || ''; me.avatar = user.photoURL || ''; me.email = user.email || '';
+    me.id = user.uid; me.name = user.displayName || (passwordLogin ? String(user.email || '').split('@')[0] : user.email) || ''; me.avatar = user.photoURL || ''; me.email = user.email || '';
     me.isAdmin = false; me.isOwner = false; booting = false;
     paintGreeting();
     setGate('loading');
@@ -651,12 +651,19 @@ async function signIn(){
     else showToast('No pude iniciar sesión. Probá de nuevo.');
   }
 }
-async function signInAdmin(email, password){
-  if (!email || !password) { showToast('Completá el correo y la contraseña.'); return; }
-  try { await FB.auth.signInWithEmailAndPassword(email, password); }
+function adminAliasEmail(username){
+  return String(username || '').trim().toLowerCase() + '@obox.invalid';
+}
+async function signInAdmin(username, password){
+  const clean = String(username || '').trim().toLowerCase();
+  if (!/^[a-z0-9._-]{3,30}$/.test(clean) || !password) {
+    showToast('Ingresá un usuario de 3 a 30 caracteres (letras, números, punto, guion o guion bajo) y tu contraseña.', null, 6000);
+    return;
+  }
+  try { await FB.auth.signInWithEmailAndPassword(adminAliasEmail(clean), password); }
   catch(e) {
     const code = (e && e.code) || '';
-    if (code === 'auth/invalid-credential' || code === 'auth/wrong-password' || code === 'auth/user-not-found') showToast('Correo o contraseña incorrectos.', null, 5000);
+    if (code === 'auth/invalid-credential' || code === 'auth/wrong-password' || code === 'auth/user-not-found') showToast('Usuario o contraseña incorrectos.', null, 5000);
     else if (code === 'auth/too-many-requests') showToast('Hubo demasiados intentos. Esperá un momento y probá de nuevo.', null, 6000);
     else if (code === 'auth/operation-not-allowed') showToast('Falta activar Correo/contraseña en Firebase Authentication.', null, 7000);
     else showToast('No pude iniciar sesión como administrador. Probá de nuevo.', null, 6000);
@@ -665,13 +672,13 @@ async function signInAdmin(email, password){
 function showAdminLoginForm(){
   const acts = $('gate-actions');
   acts.replaceChildren();
-  const email = h('input', { class:'ctl', type:'email', placeholder:'Correo del administrador', autocomplete:'username', required:true, 'aria-label':'Correo del administrador' });
+  const username = h('input', { class:'ctl', type:'text', placeholder:'Nombre de usuario', autocomplete:'username', autocapitalize:'none', spellcheck:false, required:true, 'aria-label':'Nombre de usuario' });
   const password = h('input', { class:'ctl', type:'password', placeholder:'Contraseña', autocomplete:'current-password', required:true, 'aria-label':'Contraseña' });
-  acts.append(h('form', { class:'gate-admin-form', onsubmit:(e) => { e.preventDefault(); signInAdmin(email.value.trim(), password.value); } },
-    email, password,
+  acts.append(h('form', { class:'gate-admin-form', onsubmit:(e) => { e.preventDefault(); signInAdmin(username.value, password.value); } },
+    username, password,
     h('button', { type:'submit', class:'btn block', text:'Entrar como administrador' }),
     h('button', { type:'button', class:'btn secondary sm', text:'Volver', onclick:() => setGate('login') })));
-  email.focus();
+  username.focus();
 }
 async function signOutNow(){
   try { await FB.auth.signOut(); } catch(e) {}
@@ -867,7 +874,7 @@ function setGate(kind){
     T.title.textContent = 'Un momento…'; T.text.textContent = '';
   } else if (kind === 'login') {
     T.title.textContent = 'Entrá a Obox';
-    T.text.textContent = 'Miembros: ingresen con Google. Administradores: usen su correo y contraseña de Obox.';
+    T.text.textContent = 'Miembros: ingresen con Google. Administradores: ingresen con su usuario y contraseña de Obox.';
     acts.append(
       h('button', { type:'button', class:'btn block', text:'Continuar con Google', onclick:signIn }),
       h('button', { type:'button', class:'btn secondary block', text:'Acceso administrador', onclick:showAdminLoginForm })
