@@ -2536,19 +2536,3 @@ button,
   .cal-tools { gap: 5px; }
   #cal-add-ev { padding: 8px 9px; }
 }
-
-/* Calendario mensual: aprovechar la altura disponible sin alterar otras vistas */
-@media (min-width: 960px) {
-  #view-calendar:not([hidden]) {
-    display: flex;
-    flex-direction: column;
-    height: calc(100dvh - 285px);
-    min-height: 420px;
-    min-width: 0;
-  }
-  #view-calendar:not([hidden]) .cal-grid-month {
-    flex: 1 1 auto;
-    min-height: 0;
-    grid-auto-rows: minmax(0, 1fr);
-  }
-}
