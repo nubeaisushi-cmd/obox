@@ -1836,11 +1836,49 @@ function calFitMonth() {
   for (let el = grid; el; el = el.offsetParent) top += el.offsetTop;
   const wrap = grid.closest('.wrap');
   const reserve = wrap ? (parseFloat(getComputedStyle(wrap).paddingBottom) || 0) : 0;
-  const minH = 34 + weeks * 60;
-  grid.style.height = Math.max(minH, Math.floor(window.innerHeight - top - reserve)) + 'px';
+  const gridH = Math.floor(window.innerHeight - top - reserve);
 
-  const MORE_H = 15;
-  grid.querySelectorAll('.cal-day').forEach(cell => {
+  const cells = Array.from(grid.querySelectorAll('.cal-day'));
+  const dow = grid.querySelector('.cal-dow');
+  const dowH = dow ? dow.offsetHeight : 34;
+  const sample = grid.querySelector('.cal-pills > *');
+  const STEP = (sample ? sample.offsetHeight : 16) + 2;   // alto de un ítem + separación
+  const headEl = grid.querySelector('.cal-day-head');
+  const HEAD = headEl ? headEl.offsetHeight : 22;
+  const CELL_PAD = 9;                                      // márgenes internos de la celda
+  const MORE_H = 15;                                       // alto de la línea "+N más"
+
+  // Cuántos ítems tiene la celda más cargada de cada semana.
+  const count = cell => (cell.querySelector('.cal-pills')?.children.length || 0) + (Number(cell.dataset.extra) || 0);
+  const rowN = Array.from({ length: weeks }, (_, r) => Math.max(0, ...cells.slice(r * 7, r * 7 + 7).map(count)));
+  // Mínimo de cada semana: que siempre se vean al menos 2 tareas por día (y "+N más" si hay más de 2).
+  const floor = rowN.map(n => HEAD + CELL_PAD + Math.min(n, 2) * STEP + (n > 2 ? MORE_H : 0) + (n === 0 ? 14 : 0));
+  // Lo ideal de cada semana: que entren todas las tareas.
+  const need = rowN.map(n => HEAD + CELL_PAD + n * STEP);
+
+  let avail = gridH - dowH - 2;
+  const floorSum = floor.reduce((a, b) => a + b, 0);
+  let rows = floor.slice();
+  if (floorSum > avail) {
+    // No entra ni lo mínimo: la grilla crece lo necesario (puede aparecer un poco de scroll).
+    avail = floorSum;
+  } else {
+    let free = avail - floorSum;
+    const deficit = need.map((n, i) => Math.max(0, n - floor[i]));
+    const totalDef = deficit.reduce((a, b) => a + b, 0);
+    if (totalDef > 0) {
+      const give = Math.min(free, totalDef);
+      rows = rows.map((r, i) => r + give * deficit[i] / totalDef);
+      free -= give;
+    }
+    if (free > 0) rows = rows.map(r => r + free / weeks);   // el sobrante se reparte parejo
+  }
+  rows = rows.map(Math.floor);
+  rows[rows.length - 1] += avail - rows.reduce((a, b) => a + b, 0);   // ajuste de redondeo
+  grid.style.height = (dowH + avail + 2) + 'px';
+  grid.style.gridTemplateRows = 'auto ' + rows.map(r => r + 'px').join(' ');
+
+  cells.forEach(cell => {
     const pills = cell.querySelector('.cal-pills');
     if (!pills) return;
     pills.querySelectorAll('.cal-more').forEach(n => n.remove());
