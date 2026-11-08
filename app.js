@@ -2045,8 +2045,8 @@ function openCardContextMenu(e, card, board, ro){
   e.stopPropagation();
   closeCardContextMenu();
   const menu = h('div', { class:'kcard-context-menu', role:'menu', 'aria-label':'Acciones de tarjeta' });
-  const item = (label, action, disabled) => {
-    const b = h('button', { type:'button', class:'kcard-context-item', role:'menuitem', disabled:!!disabled, text:label,
+  const item = (label, action, disabled, extraClass) => {
+    const b = h('button', { type:'button', class:'kcard-context-item' + (extraClass ? ' ' + extraClass : ''), role:'menuitem', disabled:!!disabled, text:label,
       onclick:() => { closeCardContextMenu(); action(); } });
     menu.append(b);
   };
@@ -2068,7 +2068,7 @@ function openCardContextMenu(e, card, board, ro){
     section('Mover a columna');
     (board.columns || []).forEach(col => {
       if (col.id === card.columnId) return;
-      item(col.title, () => wUpd('cards', card.id, { columnId:col.id, orden:nextOrden(card.boardId, col.id) }));
+      item(col.title, () => wUpd('cards', card.id, { columnId:col.id, orden:nextOrden(card.boardId, col.id) }), false, 'kcard-context-move');
     });
     section('Etiquetas');
     LABELS.forEach(label => {
