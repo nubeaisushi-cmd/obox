@@ -2536,3 +2536,55 @@ button,
   .cal-tools { gap: 5px; }
   #cal-add-ev { padding: 8px 9px; }
 }
+
+/* ---------- Calendario: ajuste suave del espacio superior ---------- */
+body:has(#view-calendar:not([hidden])) #app .wrap {
+  padding-top: 18px;
+}
+
+body:has(#view-calendar:not([hidden])) .top-bar {
+  margin-bottom: 18px;
+}
+
+body:has(#view-calendar:not([hidden])) .today-strip {
+  margin-bottom: 20px;
+  padding-top: 20px;
+  padding-bottom: 20px;
+}
+
+body:has(#view-calendar:not([hidden])) .toolbar {
+  margin-bottom: 14px;
+}
+
+body:has(#view-calendar:not([hidden])) .filter-row {
+  margin-bottom: 18px;
+}
+
+body:has(#view-calendar:not([hidden])) .cal-header {
+  margin-bottom: 12px;
+}
+
+@media (max-width: 760px) {
+  body:has(#view-calendar:not([hidden])) #app .wrap {
+    padding-top: 14px;
+  }
+
+  body:has(#view-calendar:not([hidden])) .top-bar {
+    margin-bottom: 14px;
+  }
+
+  body:has(#view-calendar:not([hidden])) .today-strip {
+    margin-bottom: 16px;
+    padding-top: 18px;
+    padding-bottom: 18px;
+  }
+
+  body:has(#view-calendar:not([hidden])) .toolbar {
+    margin-bottom: 12px;
+  }
+
+  body:has(#view-calendar:not([hidden])) .filter-row {
+    margin-bottom: 14px;
+  }
+}
+
