@@ -2536,3 +2536,85 @@ button,
   .cal-tools { gap: 5px; }
   #cal-add-ev { padding: 8px 9px; }
 }
+
+
+/* ---------- Calendario: espacio completo y estética Obox ---------- */
+body:has(#view-calendar:not([hidden])) #app .wrap {
+  width: 100%;
+  max-width: none;
+  min-height: 100dvh;
+  padding: 14px 22px 18px !important;
+}
+body:has(#view-calendar:not([hidden])) .top-bar { margin-bottom: 12px; }
+body:has(#view-calendar:not([hidden])) .today-strip,
+body:has(#view-calendar:not([hidden])) .sidebar,
+body:has(#view-calendar:not([hidden])) .footer-row,
+body:has(#view-calendar:not([hidden])) #search-wrap,
+body:has(#view-calendar:not([hidden])) .filter-row { display: none !important; }
+body:has(#view-calendar:not([hidden])) .layout { display: block; }
+body:has(#view-calendar:not([hidden])) .main-col { min-width: 0; width: 100%; }
+body:has(#view-calendar:not([hidden])) .main-col > .toolbar { margin: 0 0 12px; }
+body:has(#view-calendar:not([hidden])) #view-calendar {
+  display: flex;
+  flex-direction: column;
+  height: calc(100dvh - 142px);
+  min-height: 420px;
+}
+body:has(#view-calendar:not([hidden])) .cal-header {
+  flex: 0 0 auto;
+  margin-bottom: 10px;
+  padding: 4px 2px 12px;
+}
+body:has(#view-calendar:not([hidden])) .cal-grid-month {
+  flex: 1 1 auto;
+  min-height: 0;
+  height: 100%;
+  grid-template-rows: 34px repeat(6, minmax(0, 1fr));
+  gap: 7px;
+  border: 0;
+  border-radius: 0;
+  overflow: visible;
+  background: transparent;
+}
+body:has(#view-calendar:not([hidden])) .cal-grid-month .cal-dow {
+  padding: 7px 8px;
+  border: 0;
+}
+body:has(#view-calendar:not([hidden])) .cal-grid-month .cal-day {
+  min-height: 0;
+  padding: 8px 7px;
+  gap: 6px;
+  border: 1px solid var(--line-soft);
+  border-radius: 14px;
+  background: var(--surface);
+  box-shadow: 0 2px 8px rgba(35, 24, 55, .035);
+}
+body:has(#view-calendar:not([hidden])) .cal-grid-month .cal-day:nth-child(7n) { border-right: 1px solid var(--line-soft); }
+body:has(#view-calendar:not([hidden])) .cal-grid-month .cal-day:hover {
+  border-color: color-mix(in srgb, var(--obox-2) 35%, var(--line-soft));
+  background: var(--surface-2);
+}
+body:has(#view-calendar:not([hidden])) .cal-grid-month .cal-day.today {
+  border-color: color-mix(in srgb, var(--obox-2) 42%, var(--line-soft));
+  background: color-mix(in srgb, var(--obox-2) 5%, var(--surface));
+}
+body:has(#view-calendar:not([hidden])) .cal-grid-month .cal-daynum {
+  width: 28px; height: 28px; min-width: 28px;
+  font-size: 12px;
+}
+body:has(#view-calendar:not([hidden])) .cal-grid-month .cal-event-block,
+body:has(#view-calendar:not([hidden])) .cal-grid-month .cal-task-block {
+  border-radius: 7px;
+  padding: 4px 7px;
+  font-size: 11px;
+}
+@media (max-width: 760px) {
+  body:has(#view-calendar:not([hidden])) #app .wrap { padding: 10px 10px 14px !important; }
+  body:has(#view-calendar:not([hidden])) #view-calendar { height: calc(100dvh - 156px); min-height: 360px; }
+  body:has(#view-calendar:not([hidden])) .cal-header { gap: 8px; }
+  body:has(#view-calendar:not([hidden])) .cal-grid-month { gap: 4px; grid-template-rows: 28px repeat(6, minmax(0,1fr)); }
+  body:has(#view-calendar:not([hidden])) .cal-grid-month .cal-day { padding: 4px 3px; border-radius: 9px; }
+  body:has(#view-calendar:not([hidden])) .cal-grid-month .cal-dow { padding: 5px 1px; font-size: 9px; }
+  body:has(#view-calendar:not([hidden])) .cal-grid-month .cal-event-block,
+  body:has(#view-calendar:not([hidden])) .cal-grid-month .cal-task-block { font-size: 9px; padding: 2px 3px; }
+}
