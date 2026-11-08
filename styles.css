@@ -2273,3 +2273,62 @@ button,
   }
 }
 
+
+
+/* ---------- Renombrar adjuntos antes de subir ---------- */
+.at-rename-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 10050;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 18px;
+  background: rgba(22, 18, 34, .48);
+  backdrop-filter: blur(5px);
+}
+.at-rename-panel {
+  width: min(520px, 100%);
+  max-height: min( min(720px, 88dvh), 88vh);
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 22px;
+  background: var(--surface, #fff);
+  color: var(--ink);
+  border: 1px solid var(--line, rgba(0,0,0,.08));
+  border-radius: 18px;
+  box-shadow: 0 24px 70px rgba(20, 15, 35, .24);
+}
+.at-rename-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 14px;
+}
+.at-rename-head h3 { margin: 0 0 5px; font-size: 18px; }
+.at-rename-head p { margin: 0; color: var(--ink-soft); font-size: 13px; line-height: 1.45; }
+.at-rename-close {
+  flex: 0 0 32px;
+  width: 32px;
+  height: 32px;
+  border: 0;
+  border-radius: 9px;
+  background: var(--surface-2);
+  color: var(--ink);
+  font-size: 23px;
+  line-height: 1;
+  cursor: pointer;
+}
+.at-rename-list { display: flex; flex-direction: column; gap: 12px; overflow-y: auto; min-height: 0; padding: 2px 2px 4px; }
+.at-rename-item { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+.at-rename-meta { display: flex; justify-content: space-between; gap: 12px; color: var(--ink-soft); font-size: 12px; }
+.at-rename-meta strong { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--ink); font-weight: 600; }
+.at-rename-meta small { flex: 0 0 auto; color: var(--ink-faint); }
+.at-rename-input { width: 100%; min-width: 0; }
+.at-rename-actions { display: flex; justify-content: flex-end; gap: 8px; padding-top: 4px; border-top: 1px solid var(--line, rgba(0,0,0,.08)); }
+@media (max-width: 520px) {
+  .at-rename-panel { padding: 18px; border-radius: 16px; }
+  .at-rename-actions { flex-direction: column-reverse; }
+  .at-rename-actions .btn { width: 100%; }
+}
