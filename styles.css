@@ -2844,3 +2844,78 @@ body:has(#view-calendar:not([hidden])) .cal-grid.cal-grid-month .cal-more {
     width: min(340px, calc(100vw - 32px));
   }
 }
+
+
+/* ---------- Ajuste final: mes completo sin botón + ---------- */
+body:has(#view-calendar:not([hidden])) #app .wrap {
+  padding-bottom: 12px !important;
+}
+
+body:has(#view-calendar:not([hidden])) .top-bar {
+  margin-bottom: 8px;
+  padding-bottom: 8px;
+}
+
+body:has(#view-calendar:not([hidden])) .toolbar {
+  margin-bottom: 8px;
+  padding-bottom: 6px;
+}
+
+body:has(#view-calendar:not([hidden])) .filter-row {
+  min-height: 0;
+  margin-bottom: 8px;
+  padding-bottom: 6px;
+}
+
+body:has(#view-calendar:not([hidden])) .cal-header {
+  margin-bottom: 6px;
+}
+
+body:has(#view-calendar:not([hidden])) .cal-grid.cal-grid-month {
+  height: calc(100dvh - 230px);
+  min-height: 0;
+  grid-template-rows: 20px repeat(var(--cal-weeks), minmax(0, 1fr));
+  gap: 4px;
+}
+
+body:has(#view-calendar:not([hidden])) .cal-grid.cal-grid-month .cal-day-head {
+  justify-content: center;
+  min-height: 20px;
+}
+
+body:has(#view-calendar:not([hidden])) .cal-grid.cal-grid-month .cal-day {
+  padding: 4px 5px;
+  gap: 3px;
+}
+
+body:has(#view-calendar:not([hidden])) .cal-grid.cal-grid-month .cal-daynum {
+  width: 21px;
+  min-width: 21px;
+  height: 21px;
+  font-size: 11px;
+}
+
+body:has(#view-calendar:not([hidden])) .cal-grid.cal-grid-month .cal-pills {
+  gap: 1px;
+}
+
+body:has(#view-calendar:not([hidden])) .cal-grid.cal-grid-month .cal-event-block,
+body:has(#view-calendar:not([hidden])) .cal-grid.cal-grid-month .cal-task-block {
+  padding: 1px 4px;
+  font-size: 10px;
+  line-height: 1.2;
+}
+
+@media (max-width: 760px) {
+  body:has(#view-calendar:not([hidden])) #app .wrap {
+    padding-bottom: 12px !important;
+  }
+
+  body:has(#view-calendar:not([hidden])) .cal-grid.cal-grid-month {
+    height: auto;
+    min-height: 0;
+    grid-template-rows: none;
+    grid-auto-rows: minmax(66px, auto);
+    gap: 4px;
+  }
+}
