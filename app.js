@@ -1619,25 +1619,85 @@ $('btn-week-retro-save').addEventListener('click', () => {
   flashButton($('btn-week-retro-save'), 'Guardado ✓');
 });
 
-/* ---------- Calendario ---------- */
+/* ---------- Calendario estilo Google Calendar ---------- */
 const DOW = ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'];
-function renderCalendar() {
-  const grid = $('cal-grid');
-  grid.innerHTML = '';
-  DOW.forEach(d => { const el = document.createElement('div'); el.className = 'cal-dow'; el.textContent = d; grid.appendChild(el); });
+const DOW_FULL = ['lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado', 'domingo'];
+let calView = 'month';
+function calWeekStart(date) {
+  const d = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+  d.setDate(d.getDate() - ((d.getDay() + 6) % 7));
+  return d;
+}
+function calDateLabel(date, opts) {
+  return date.toLocaleDateString('es-AR', opts);
+}
+function calSetTitle() {
+  const title = $('cal-title');
+  if (calView === 'month') {
+    title.textContent = calDateLabel(calDate, { month: 'long', year: 'numeric' });
+  } else if (calView === 'day') {
+    title.textContent = calDateLabel(calDate, { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+  } else {
+    const first = calWeekStart(calDate);
+    const last = new Date(first); last.setDate(last.getDate() + 6);
+    const a = calDateLabel(first, { day: 'numeric', month: 'short' });
+    const b = calDateLabel(last, { day: 'numeric', month: 'short', year: 'numeric' });
+    title.textContent = a + ' – ' + b;
+  }
+}
+function calMove(delta) {
+  if (calView === 'month') calDate = new Date(calDate.getFullYear(), calDate.getMonth() + delta, 1);
+  else {
+    const d = new Date(calDate);
+    d.setDate(d.getDate() + delta * (calView === 'week' ? 7 : 1));
+    calDate = d;
+  }
+  renderCalendar();
+}
+function calOpenTask(task, iso) {
+  if (!task || !canWrite(task.cliente)) { openDayModal(iso); return; }
+  task.estado === 'Hecho' ? reopen(task) : setEstado(task, 'Hecho');
+}
+function calTaskNode(task, compact) {
+  const el = document.createElement('button');
+  el.type = 'button';
+  el.className = 'cal-task-block' + (task.estado === 'Hecho' ? ' is-done' : '');
+  el.style.setProperty('--cal-task-color', clientColor(task.cliente));
+  el.textContent = task.titulo || 'Tarea';
+  el.title = task.titulo || 'Tarea';
+  el.addEventListener('click', (e) => { e.stopPropagation(); calOpenTask(task, task.fecha); });
+  return el;
+}
+function calEventNode(ev, iso, timed) {
+  const el = document.createElement('button');
+  el.type = 'button';
+  el.className = 'cal-event-block' + (timed ? ' is-timed' : '');
+  el.textContent = (timed && ev.hora ? ev.hora + ' ' : '') + (ev.titulo || 'Evento');
+  el.title = (ev.hora ? ev.hora + (ev.horaFin ? '–' + ev.horaFin : '') + ' · ' : '') + (ev.titulo || 'Evento');
+  el.addEventListener('click', (e) => {
+    e.stopPropagation();
+    if (typeof openEventModal === 'function') openEventModal(iso, ev);
+  });
+  return el;
+}
+function renderCalendarMonth(grid, pool, todayS) {
+  DOW.forEach(d => {
+    const el = document.createElement('div');
+    el.className = 'cal-dow';
+    el.textContent = d;
+    grid.appendChild(el);
+  });
   const y = calDate.getFullYear(), m = calDate.getMonth();
   const startWeekday = (new Date(y, m, 1).getDay() + 6) % 7;
   const daysInMonth = new Date(y, m + 1, 0).getDate();
   const prevMonthDays = new Date(y, m, 0).getDate();
   const totalCells = Math.ceil((startWeekday + daysInMonth) / 7) * 7;
-  const todayS = todayStr();
-  const pool = D.tasks.filter(t => t.id !== pendingDeleteId && clientVisible(t.cliente) && !t.hideFromCalendar).filter(matches);
   for (let i = 0; i < totalCells; i++) {
     const dayNum = i - startWeekday + 1;
     let cellDate, muted = false;
     if (dayNum < 1) { cellDate = new Date(y, m - 1, prevMonthDays + dayNum); muted = true; }
     else if (dayNum > daysInMonth) { cellDate = new Date(y, m + 1, dayNum - daysInMonth); muted = true; }
-    else { cellDate = new Date(y, m, dayNum); }
+    else cellDate = new Date(y, m, dayNum);
     const iso = fmtISO(cellDate);
     const dayTasks = pool.filter(t => t.fecha === iso);
     const dayEv = !(myMember && myMember.role === 'cliente') && typeof eventsOn === 'function' ? eventsOn(iso) : [];
@@ -1646,36 +1706,148 @@ function renderCalendar() {
     cell.dataset.iso = iso;
     cell.tabIndex = 0;
     cell.setAttribute('role', 'button');
-    cell.setAttribute('aria-label', `${fmtLong(iso)}: ${dayTasks.length || dayEv.length ? [dayTasks.length ? plural(dayTasks.length, 'tarea', 'tareas') : '', dayEv.length ? plural(dayEv.length, 'evento', 'eventos') : ''].filter(Boolean).join(' y ') : 'sin tareas'}`);
-    const evPills = dayEv.map(e => `<div class="cal-ev" data-ev="${escapeHtml(e.id)}" title="${escapeHtml((e.hora ? e.hora + ' · ' : '') + e.titulo)}">${escapeHtml((e.hora ? e.hora + ' ' : '') + e.titulo)}</div>`);
-    const tkPills = dayTasks.map(t =>
-      `<div class="cal-pill${t.estado === 'Hecho' ? ' is-done' : ''}" style="background:${escapeHtml(clientColor(t.cliente))}" data-id="${escapeHtml(t.id)}" title="${escapeHtml(t.titulo)}">${escapeHtml(t.titulo)}</div>`
-    );
-    const allPills = evPills.concat(tkPills);
-    const pills = allPills.slice(0, 3).join('');
-    const more = allPills.length > 3 ? `<div class="cal-more">+${allPills.length - 3}</div>` : '';
-    cell.innerHTML = `<span class="cal-daynum">${cellDate.getDate()}</span><div class="cal-pills">${pills}</div>${more}`;
+    cell.setAttribute('aria-label', fmtLong(iso));
+    const head = document.createElement('div');
+    head.className = 'cal-day-head';
+    const num = document.createElement('span');
+    num.className = 'cal-daynum';
+    num.textContent = cellDate.getDate();
+    head.appendChild(num);
+    cell.appendChild(head);
+    const pills = document.createElement('div');
+    pills.className = 'cal-pills';
+    const items = [];
+    dayEv.forEach(e => items.push({ type: 'event', value: e }));
+    dayTasks.forEach(t => items.push({ type: 'task', value: t }));
+    items.slice(0, 4).forEach(item => {
+      pills.appendChild(item.type === 'event' ? calEventNode(item.value, iso, false) : calTaskNode(item.value, true));
+    });
+    cell.appendChild(pills);
+    if (items.length > 4) {
+      const more = document.createElement('div');
+      more.className = 'cal-more';
+      more.textContent = '+' + (items.length - 4) + ' más';
+      cell.appendChild(more);
+    }
     cell.addEventListener('click', () => openDayModal(iso));
     cell.addEventListener('keydown', (e) => {
       if (e.target === cell && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); openDayModal(iso); }
     });
-    cell.querySelectorAll('.cal-pill').forEach(p => {
-      p.addEventListener('click', (e) => {
-        if (isNarrowCal()) return; // en el celular el toque abre el día
-        e.stopPropagation();
-        const t = D.tasks.find(x => x.id === p.dataset.id);
-        if (!t || !canWrite(t.cliente)) { openDayModal(iso); return; }
-        t.estado === 'Hecho' ? reopen(t) : setEstado(t, 'Hecho');
-      });
-    });
-    if (typeof bindEventPills === 'function') bindEventPills(cell, iso);
     grid.appendChild(cell);
   }
-  $('cal-title').textContent = calDate.toLocaleDateString('es-AR', { month: 'long', year: 'numeric' });
 }
-$('cal-prev').addEventListener('click', () => { calDate = new Date(calDate.getFullYear(), calDate.getMonth() - 1, 1); renderCalendar(); });
-$('cal-next').addEventListener('click', () => { calDate = new Date(calDate.getFullYear(), calDate.getMonth() + 1, 1); renderCalendar(); });
+function renderCalendarTime(grid, pool, todayS) {
+  const first = calView === 'day' ? new Date(calDate) : calWeekStart(calDate);
+  const count = calView === 'day' ? 1 : 7;
+  const dates = Array.from({ length: count }, (_, i) => {
+    const d = new Date(first); d.setDate(d.getDate() + i); return d;
+  });
+  const head = document.createElement('div');
+  head.className = 'cal-time-head';
+  head.style.setProperty('--cal-days', count);
+  const corner = document.createElement('div');
+  corner.className = 'cal-time-corner';
+  head.appendChild(corner);
+  dates.forEach(d => {
+    const iso = fmtISO(d);
+    const b = document.createElement('button');
+    b.type = 'button';
+    b.className = 'cal-time-day' + (iso === todayS ? ' today' : '');
+    b.innerHTML = '<span>' + DOW_FULL[(d.getDay() + 6) % 7] + '</span><strong>' + d.getDate() + '</strong>';
+    b.addEventListener('click', () => openDayModal(iso));
+    head.appendChild(b);
+  });
+  grid.appendChild(head);
+
+  const allDay = document.createElement('div');
+  allDay.className = 'cal-allday-row';
+  allDay.style.setProperty('--cal-days', count);
+  const label = document.createElement('div');
+  label.className = 'cal-gutter-label';
+  label.textContent = 'Todo el día';
+  allDay.appendChild(label);
+  dates.forEach(d => {
+    const iso = fmtISO(d);
+    const cell = document.createElement('div');
+    cell.className = 'cal-allday-cell' + (iso === todayS ? ' today' : '');
+    cell.addEventListener('click', () => openDayModal(iso));
+    const evs = !(myMember && myMember.role === 'cliente') && typeof eventsOn === 'function' ? eventsOn(iso) : [];
+    evs.filter(e => !e.hora).slice(0, 3).forEach(e => cell.appendChild(calEventNode(e, iso, false)));
+    pool.filter(t => t.fecha === iso).slice(0, 3).forEach(t => cell.appendChild(calTaskNode(t, true)));
+    allDay.appendChild(cell);
+  });
+  grid.appendChild(allDay);
+
+  const scroll = document.createElement('div');
+  scroll.className = 'cal-time-scroll';
+  const body = document.createElement('div');
+  body.className = 'cal-time-body';
+  body.style.setProperty('--cal-days', count);
+  const axis = document.createElement('div');
+  axis.className = 'cal-time-axis';
+  for (let hour = 7; hour <= 22; hour++) {
+    const tick = document.createElement('div');
+    tick.className = 'cal-hour-label';
+    tick.textContent = hour === 12 ? '12 PM' : (hour < 12 ? hour + ' AM' : (hour === 24 ? '12 AM' : (hour - 12) + ' PM'));
+    axis.appendChild(tick);
+  }
+  body.appendChild(axis);
+  dates.forEach(d => {
+    const iso = fmtISO(d);
+    const col = document.createElement('div');
+    col.className = 'cal-time-column' + (iso === todayS ? ' today' : '');
+    col.dataset.iso = iso;
+    for (let hour = 7; hour <= 22; hour++) {
+      const line = document.createElement('div');
+      line.className = 'cal-hour-line';
+      line.style.top = ((hour - 7) * 60) + 'px';
+      col.appendChild(line);
+    }
+    col.addEventListener('click', () => openDayModal(iso));
+    const evs = !(myMember && myMember.role === 'cliente') && typeof eventsOn === 'function' ? eventsOn(iso) : [];
+    evs.filter(e => !!e.hora).forEach(ev => {
+      const parts = ev.hora.split(':').map(Number);
+      const startMin = (parts[0] * 60 + parts[1]);
+      const endParts = (ev.horaFin || '').split(':').map(Number);
+      const endMin = ev.horaFin ? endParts[0] * 60 + endParts[1] : startMin + 60;
+      const top = Math.max(0, startMin - 420);
+      const bottom = Math.min(960, Math.max(startMin + 30, endMin) - 420);
+      if (bottom <= 0 || top >= 960) return;
+      const node = calEventNode(ev, iso, true);
+      node.style.top = Math.max(0, top) + 'px';
+      node.style.height = Math.max(28, bottom - top) + 'px';
+      col.appendChild(node);
+    });
+    body.appendChild(col);
+  });
+  scroll.appendChild(body);
+  grid.appendChild(scroll);
+}
+function renderCalendar() {
+  const grid = $('cal-grid');
+  grid.innerHTML = '';
+  grid.className = 'cal-grid cal-grid-' + calView;
+  const todayS = todayStr();
+  const pool = D.tasks.filter(t => t.id !== pendingDeleteId && clientVisible(t.cliente) && !t.hideFromCalendar).filter(matches);
+  calSetTitle();
+  if (calView === 'month') renderCalendarMonth(grid, pool, todayS);
+  else renderCalendarTime(grid, pool, todayS);
+  document.querySelectorAll('[data-cal-view]').forEach(b => {
+    const active = b.dataset.calView === calView;
+    b.classList.toggle('on', active);
+    b.setAttribute('aria-pressed', String(active));
+  });
+}
+$('cal-prev').addEventListener('click', () => calMove(-1));
+$('cal-next').addEventListener('click', () => calMove(1));
 $('cal-today').addEventListener('click', () => { calDate = new Date(); renderCalendar(); });
+document.querySelectorAll('[data-cal-view]').forEach(b => b.addEventListener('click', () => {
+  calView = b.dataset.calView;
+  renderCalendar();
+}));
+if ($('cal-add-ev')) $('cal-add-ev').addEventListener('click', () => {
+  if (typeof openEventModal === 'function' && !(myMember && myMember.role === 'cliente') && hasAccess()) openEventModal(fmtISO(calDate), null);
+});
 
 /* ---------- Panel del día ---------- */
 function openDayModal(iso) {
