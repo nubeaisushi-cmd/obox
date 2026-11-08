@@ -256,9 +256,12 @@
         </div>
       </div>
       <div class="filter-row">
-        <button type="button" class="btn sm cal-side-create" id="cal-add-ev">+ Crear evento</button>
-        <div class="cal-side-heading">Mis calendarios · Clientes</div>
-        <div class="client-chips" id="client-chips" role="group" aria-label="Filtrar por cliente"></div>
+        <button type="button" class="btn sm cal-side-create" id="cal-add-task">+ Nueva tarea</button>
+        <button type="button" class="btn secondary sm cal-side-event" id="cal-add-ev">+ Crear evento</button>
+        <details class="cal-client-filter">
+          <summary id="cal-client-summary">Filtrar por cliente · Todos</summary>
+          <div class="client-chips" id="client-chips" role="group" aria-label="Filtrar por cliente"></div>
+        </details>
         <button type="button" class="client-chip mine" id="only-mine" aria-pressed="false" hidden>Solo mis tareas</button>
       </div>
 
