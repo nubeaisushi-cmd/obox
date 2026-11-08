@@ -1711,8 +1711,12 @@ function renderCalendarMonth(grid, pool, todayS) {
     const head = document.createElement('div');
     head.className = 'cal-day-head';
     const num = document.createElement('span');
-    num.className = 'cal-daynum';
-    num.textContent = cellDate.getDate();
+    const isFirst = cellDate.getDate() === 1;
+    num.className = 'cal-daynum' + (isFirst ? ' is-first' : '');
+    // Como en Google Calendar: el día 1 de cada mes muestra también el nombre del mes ("1 nov").
+    num.textContent = isFirst
+      ? '1 ' + cellDate.toLocaleDateString('es-AR', { month: 'short' }).replace('.', '')
+      : cellDate.getDate();
     head.appendChild(num);
     cell.appendChild(head);
     const pills = document.createElement('div');
@@ -1720,16 +1724,12 @@ function renderCalendarMonth(grid, pool, todayS) {
     const items = [];
     dayEv.forEach(e => items.push({ type: 'event', value: e }));
     dayTasks.forEach(t => items.push({ type: 'task', value: t }));
-    items.slice(0, 4).forEach(item => {
+    // Se dibujan todos (con un tope) y calFitMonth() recorta lo que no entra en el alto de la celda.
+    items.slice(0, 30).forEach(item => {
       pills.appendChild(item.type === 'event' ? calEventNode(item.value, iso, false) : calTaskNode(item.value, true));
     });
     cell.appendChild(pills);
-    if (items.length > 4) {
-      const more = document.createElement('div');
-      more.className = 'cal-more';
-      more.textContent = '+' + (items.length - 4) + ' más';
-      cell.appendChild(more);
-    }
+    if (items.length > 30) cell.dataset.extra = String(items.length - 30);
     cell.addEventListener('click', () => openDayModal(iso));
     cell.addEventListener('keydown', (e) => {
       if (e.target === cell && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); openDayModal(iso); }
@@ -1824,16 +1824,81 @@ function renderCalendarTime(grid, pool, todayS) {
   scroll.appendChild(body);
   grid.appendChild(scroll);
 }
+/* Vista de mes a pantalla completa: la grilla ocupa todo el alto que queda libre en la ventana
+   (sin scroll de página) y cada celda muestra solo los ítems que entran, con "+N más" para el resto. */
+function calFitMonth() {
+  const grid = $('cal-grid');
+  const view = $('view-calendar');
+  if (!grid || !view || view.hidden || calView !== 'month') return;
+  const weeks = Number(grid.style.getPropertyValue('--cal-weeks')) || 5;
+  // offsetTop ignora transformaciones (la vista entra con una animación de 6px).
+  let top = 0;
+  for (let el = grid; el; el = el.offsetParent) top += el.offsetTop;
+  const wrap = grid.closest('.wrap');
+  const reserve = wrap ? (parseFloat(getComputedStyle(wrap).paddingBottom) || 0) : 0;
+  const minH = 34 + weeks * 60;
+  grid.style.height = Math.max(minH, Math.floor(window.innerHeight - top - reserve)) + 'px';
+
+  const MORE_H = 15;
+  grid.querySelectorAll('.cal-day').forEach(cell => {
+    const pills = cell.querySelector('.cal-pills');
+    if (!pills) return;
+    pills.querySelectorAll('.cal-more').forEach(n => n.remove());
+    const kids = Array.from(pills.children);
+    const extra = Number(cell.dataset.extra) || 0;
+    const limit = pills.clientHeight;
+    if (!limit) return;
+    const bottomOf = el => el.offsetTop + el.offsetHeight;
+    const allFit = !kids.length || bottomOf(kids[kids.length - 1]) <= limit;
+    if (allFit && !extra) return;
+    let keep = 0;
+    for (let i = 0; i < kids.length; i++) {
+      if (bottomOf(kids[i]) <= limit - MORE_H) keep = i + 1; else break;
+    }
+    if (allFit) keep = kids.length;
+    const hidden = kids.length - keep + extra;
+    for (let i = kids.length - 1; i >= keep; i--) kids[i].remove();
+    if (hidden > 0) {
+      const more = document.createElement('div');
+      more.className = 'cal-more';
+      more.textContent = '+' + hidden + ' más';
+      pills.appendChild(more);
+    }
+  });
+}
+let calFitRaf = 0;
+function calScheduleFit() {
+  if (calFitRaf) return;
+  calFitRaf = requestAnimationFrame(() => {
+    calFitRaf = 0;
+    const view = $('view-calendar');
+    if (currentView === 'calendar' && calView === 'month' && view && !view.hidden) renderCalendar();
+  });
+}
+window.addEventListener('resize', calScheduleFit);
+if (typeof ResizeObserver === 'function') {
+  // Si cambia el ANCHO de la columna principal (por ejemplo al abrir o cerrar el panel de nueva tarea),
+  // los filtros pueden reacomodarse y cambia el alto disponible. El alto no se observa para no entrar en bucle.
+  let lastW = 0;
+  new ResizeObserver(entries => {
+    const w = Math.round(entries[0].contentRect.width);
+    if (w !== lastW) { lastW = w; calScheduleFit(); }
+  }).observe(document.querySelector('.main-col'));
+}
 function renderCalendar() {
   const grid = $('cal-grid');
   grid.innerHTML = '';
+  grid.style.cssText = '';
   grid.className = 'cal-grid cal-grid-' + calView;
   const todayS = todayStr();
   const pool = D.tasks.filter(t => t.id !== pendingDeleteId && clientVisible(t.cliente) && !t.hideFromCalendar).filter(matches);
   calSetTitle();
   if ($('cal-add-ev')) $('cal-add-ev').hidden = !hasAccess() || !!(myMember && myMember.role === 'cliente');
-  if (calView === 'month') renderCalendarMonth(grid, pool, todayS);
-  else renderCalendarTime(grid, pool, todayS);
+  if (calView === 'month') {
+    renderCalendarMonth(grid, pool, todayS);
+    // La vista puede estar todavía oculta (en la transición entre pestañas): se mide en el cuadro siguiente.
+    requestAnimationFrame(calFitMonth);
+  } else renderCalendarTime(grid, pool, todayS);
   document.querySelectorAll('[data-cal-view]').forEach(b => {
     const active = b.dataset.calView === calView;
     b.classList.toggle('on', active);
