@@ -2421,10 +2421,46 @@ function pushAttachment(card, att){
   const cur = D.cards.find(x => x.id === card.id) || card;
   return wUpd('cards', card.id, { adjuntos: [...(cur.adjuntos || []), att] });
 }
+function askAttachmentNames(files){
+  return new Promise(resolve => {
+    const list = [...files];
+    if (!list.length) return resolve(null);
+    const inputs = list.map((f, i) => h('label', { class:'at-rename-item' },
+      h('span', { class:'at-rename-meta' }, h('strong', { text:f.name || 'archivo' }), h('small', { text:fmtSize(f.size) })),
+      h('input', { class:'ctl at-rename-input', type:'text', value:f.name || 'archivo', 'aria-label':`Nombre del archivo ${i+1}` })
+    ));
+    const backdrop = h('div', { class:'at-rename-backdrop' });
+    const panel = h('section', { class:'at-rename-panel', role:'dialog', 'aria-modal':'true', 'aria-labelledby':'at-rename-title' },
+      h('div', { class:'at-rename-head' },
+        h('div', null, h('h3', { id:'at-rename-title', text:'Preparar archivos' }), h('p', { text:'Revisá o cambiá los nombres antes de subirlos.' })),
+        h('button', { type:'button', class:'at-rename-close', text:'×', 'aria-label':'Cancelar', onclick:() => finish(null) })
+      ),
+      h('div', { class:'at-rename-list' }, ...inputs),
+      h('div', { class:'at-rename-actions' },
+        btn('Cancelar', 'btn secondary', () => finish(null)),
+        btn('Subir archivos', 'btn', () => {
+          const names = [...panel.querySelectorAll('.at-rename-input')].map(x => x.value.trim());
+          if (names.some(x => !x)) { showToast('Cada archivo necesita un nombre.'); return; }
+          const renamed = list.map((f, i) => new File([f], names[i], { type:f.type, lastModified:f.lastModified }));
+          finish(renamed);
+        })
+      )
+    );
+    backdrop.append(panel);
+    function finish(value){ backdrop.remove(); resolve(value); }
+    backdrop.addEventListener('click', e => { if (e.target === backdrop) finish(null); });
+    document.addEventListener('keydown', function onKey(e){ if (e.key === 'Escape' && backdrop.isConnected) { document.removeEventListener('keydown', onKey); finish(null); } });
+    document.body.append(backdrop);
+    const first = panel.querySelector('.at-rename-input');
+    if (first) { first.focus(); first.select(); }
+  });
+}
 async function addFiles(files){
   const c = curCard(); if (!c) return;
   const b = curBoard(c); if (!b || !canWrite(b.cliente)) return;
-  const list = [...files];
+  const selected = [...files];
+  const list = await askAttachmentNames(selected);
+  if (!list || !list.length) return;
   const tooBig = [], failed = [];
   attachProg.done = 0; attachProg.total = list.length;
   for (const f of list) {
