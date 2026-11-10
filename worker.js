@@ -257,6 +257,7 @@ function shiftDate(iso, days) {
 function dueNoticeKind(dueDate, today) {
   if (!/^\d{4}-\d{2}-\d{2}$/.test(String(dueDate || ''))) return null;
   if (shiftDate(today, 1) === dueDate) return { key: 'pre:' + dueDate, title: '⏰ Mañana vence una tarea', bodyPrefix: 'Vence mañana' };
+  if (today === dueDate) return { key: 'today:' + dueDate, title: '⏰ Hoy vence una tarea', bodyPrefix: 'Vence hoy' };
   if (today > dueDate) return { key: 'late:' + today, title: '⚠️ Tenés una tarea vencida', bodyPrefix: 'Está vencida desde ' + dueDate };
   return null;
 }
