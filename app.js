@@ -130,10 +130,11 @@ function trelloAutoScrollAt(x, y){
   const speedAt = (distance) => Math.ceil(maxSpeed * Math.min(1, Math.max(0, (edge - distance) / edge)));
   const kan = document.querySelector('#view-boards:not([hidden]) .kanban');
   if (kan && kan.scrollWidth > kan.clientWidth + 2) {
-    if (x >= window.innerWidth - edge) {
-      kan.scrollLeft += speedAt(window.innerWidth - x);
-    } else if (x <= edge) {
-      kan.scrollLeft -= speedAt(x);
+    const bounds = kan.getBoundingClientRect();
+    if (x >= bounds.right - edge && x <= bounds.right + 8) {
+      kan.scrollLeft += speedAt(bounds.right - x);
+    } else if (x <= bounds.left + edge && x >= bounds.left - 8) {
+      kan.scrollLeft -= speedAt(x - bounds.left);
     }
   }
 
