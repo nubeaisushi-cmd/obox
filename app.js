@@ -122,41 +122,6 @@ let dailyDirty = false, weekDirty = false, selectedEnergy = '';
 let calDate = new Date();
 let currentBoardId = '', openCardId = null, boardModalId = null;
 let dragging = false, deferredRender = false;
-let trelloDragging = false;
-
-function trelloAutoScrollAt(x, y){
-  if (!trelloDragging) return;
-  const edge = 90, maxSpeed = 26;
-  const speedAt = (distance) => Math.ceil(maxSpeed * Math.min(1, Math.max(0, (edge - distance) / edge)));
-  const kan = document.querySelector('#view-boards:not([hidden]) .kanban');
-  if (kan && kan.scrollWidth > kan.clientWidth + 2) {
-    const bounds = kan.getBoundingClientRect();
-    if (x >= bounds.right - edge && x <= bounds.right + 8) {
-      kan.scrollLeft += speedAt(bounds.right - x);
-    } else if (x <= bounds.left + edge && x >= bounds.left - 8) {
-      kan.scrollLeft -= speedAt(x - bounds.left);
-    }
-  }
-
-  if (y <= edge || y >= window.innerHeight - edge) {
-    let target = document.elementFromPoint(x, Math.max(1, Math.min(window.innerHeight - 1, y)));
-    let col = target && target.closest ? target.closest('.kcol') : null;
-    let list = col && col.querySelector('.kcol-cards');
-    if (list && list.scrollHeight > list.clientHeight + 2) {
-      list.scrollTop += y <= edge ? -speedAt(y) : speedAt(window.innerHeight - y);
-    } else {
-      const amount = y <= edge ? -speedAt(y) : speedAt(window.innerHeight - y);
-      window.scrollBy(0, amount);
-    }
-  }
-}
-
-function updateTrelloDragPosition(e){
-  if (!trelloDragging) return;
-  trelloAutoScrollAt(e.clientX, e.clientY);
-}
-document.addEventListener('drag', updateTrelloDragPosition, true);
-document.addEventListener('dragover', updateTrelloDragPosition, true);
 let teamEditing = null;
 
 /* ---------- Utilidades (fechas siempre en hora local) ---------- */
@@ -2381,9 +2346,9 @@ if (coverImg) {
   el.addEventListener('contextmenu', (e) => openCardContextMenu(e, c, board, ro));
   el.addEventListener('keydown', (e) => { if (e.target === el && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); openCard(c.id); } });
   if (!ro) {
-    el.addEventListener('dragstart', (e) => { dragging = true; trelloDragging = true; el.classList.add('dragging'); try { e.dataTransfer.effectAllowed = 'move'; e.dataTransfer.setData('text/plain', c.id); } catch(x) {} });
+    el.addEventListener('dragstart', (e) => { dragging = true; el.classList.add('dragging'); try { e.dataTransfer.effectAllowed = 'move'; e.dataTransfer.setData('text/plain', c.id); } catch(x) {} });
     el.addEventListener('dragend', () => {
-      dragging = false; trelloDragging = false; el.classList.remove('dragging');
+      dragging = false; el.classList.remove('dragging');
       document.querySelectorAll('.kcol-cards.over').forEach(x => x.classList.remove('over'));
       finishCardDrag(el);
       scheduleRender();
