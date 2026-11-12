@@ -141,10 +141,10 @@ function trelloAutoScrollStep(){
   const kan = document.querySelector('#view-boards:not([hidden]) .kanban');
   if (kan && kan.scrollWidth > kan.clientWidth + 2) {
     const r = kan.getBoundingClientRect();
-    if (x >= window.innerWidth - edge && r.right > window.innerWidth - 2) {
-      kan.scrollLeft += speedAt(window.innerWidth - x);
-    } else if (x <= edge && r.left < 2) {
-      kan.scrollLeft -= speedAt(x);
+    if (x >= r.right - edge && r.right - x < edge) {
+      kan.scrollLeft += speedAt(r.right - x);
+    } else if (x <= r.left + edge && x - r.left < edge) {
+      kan.scrollLeft -= speedAt(x - r.left);
     }
   }
 
