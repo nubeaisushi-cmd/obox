@@ -122,35 +122,25 @@ let dailyDirty = false, weekDirty = false, selectedEnergy = '';
 let calDate = new Date();
 let currentBoardId = '', openCardId = null, boardModalId = null;
 let dragging = false, deferredRender = false;
-let trelloDragging = false, trelloDragPoint = null, trelloAutoScrollFrame = 0;
+let trelloDragging = false;
 
-function stopTrelloAutoScroll(){
-  trelloDragging = false;
-  trelloDragPoint = null;
-  if (trelloAutoScrollFrame) cancelAnimationFrame(trelloAutoScrollFrame);
-  trelloAutoScrollFrame = 0;
-}
-
-function trelloAutoScrollStep(){
-  trelloAutoScrollFrame = 0;
-  if (!trelloDragging || !trelloDragPoint) return;
-  const { x, y } = trelloDragPoint;
-  const edge = 76, maxSpeed = 15;
+function trelloAutoScrollAt(x, y){
+  if (!trelloDragging) return;
+  const edge = 90, maxSpeed = 26;
   const speedAt = (distance) => Math.ceil(maxSpeed * Math.min(1, Math.max(0, (edge - distance) / edge)));
-
   const kan = document.querySelector('#view-boards:not([hidden]) .kanban');
   if (kan && kan.scrollWidth > kan.clientWidth + 2) {
-    const r = kan.getBoundingClientRect();
-    if (x >= r.right - edge && r.right - x < edge) {
-      kan.scrollLeft += speedAt(r.right - x);
-    } else if (x <= r.left + edge && x - r.left < edge) {
-      kan.scrollLeft -= speedAt(x - r.left);
+    if (x >= window.innerWidth - edge) {
+      kan.scrollLeft += speedAt(window.innerWidth - x);
+    } else if (x <= edge) {
+      kan.scrollLeft -= speedAt(x);
     }
   }
 
   if (y <= edge || y >= window.innerHeight - edge) {
-    const target = document.elementFromPoint(x, y);
-    const list = target && target.closest ? target.closest('.kcol-cards') : null;
+    let target = document.elementFromPoint(x, Math.max(1, Math.min(window.innerHeight - 1, y)));
+    let col = target && target.closest ? target.closest('.kcol') : null;
+    let list = col && col.querySelector('.kcol-cards');
     if (list && list.scrollHeight > list.clientHeight + 2) {
       list.scrollTop += y <= edge ? -speedAt(y) : speedAt(window.innerHeight - y);
     } else {
@@ -158,14 +148,14 @@ function trelloAutoScrollStep(){
       window.scrollBy(0, amount);
     }
   }
-  trelloAutoScrollFrame = requestAnimationFrame(trelloAutoScrollStep);
 }
 
-document.addEventListener('dragover', (e) => {
+function updateTrelloDragPosition(e){
   if (!trelloDragging) return;
-  trelloDragPoint = { x: e.clientX, y: e.clientY };
-  if (!trelloAutoScrollFrame) trelloAutoScrollFrame = requestAnimationFrame(trelloAutoScrollStep);
-}, true);
+  trelloAutoScrollAt(e.clientX, e.clientY);
+}
+document.addEventListener('drag', updateTrelloDragPosition, true);
+document.addEventListener('dragover', updateTrelloDragPosition, true);
 let teamEditing = null;
 
 /* ---------- Utilidades (fechas siempre en hora local) ---------- */
@@ -2390,9 +2380,9 @@ if (coverImg) {
   el.addEventListener('contextmenu', (e) => openCardContextMenu(e, c, board, ro));
   el.addEventListener('keydown', (e) => { if (e.target === el && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); openCard(c.id); } });
   if (!ro) {
-    el.addEventListener('dragstart', (e) => { dragging = true; trelloDragging = true; trelloDragPoint = { x: e.clientX, y: e.clientY }; el.classList.add('dragging'); try { e.dataTransfer.effectAllowed = 'move'; e.dataTransfer.setData('text/plain', c.id); } catch(x) {} });
+    el.addEventListener('dragstart', (e) => { dragging = true; trelloDragging = true; el.classList.add('dragging'); try { e.dataTransfer.effectAllowed = 'move'; e.dataTransfer.setData('text/plain', c.id); } catch(x) {} });
     el.addEventListener('dragend', () => {
-      dragging = false; stopTrelloAutoScroll(); el.classList.remove('dragging');
+      dragging = false; trelloDragging = false; el.classList.remove('dragging');
       document.querySelectorAll('.kcol-cards.over').forEach(x => x.classList.remove('over'));
       finishCardDrag(el);
       scheduleRender();
