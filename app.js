@@ -913,7 +913,9 @@ document.addEventListener('focusout', () => { if (deferredRender) setTimeout(() 
 function renderAll(){
   renderChrome();
   renderTasks();
-  if (currentView === 'boards') renderBoards();
+  // No reconstruir el tablero mientras se edita una tarjeta:
+  // evita saltos visuales y pérdida de estado en columnas/adjuntos.
+  if (currentView === 'boards' && !openCardId) renderBoards();
   if (currentView === 'team') renderTeam();
   if (openCardId) syncCardModal();
 }
@@ -2486,7 +2488,7 @@ function openCard(id){
   disarmCardDel();
   $('card-modal-backdrop').classList.add('show');
 }
-function closeCard(){ openCardId = null; $('card-modal-backdrop').classList.remove('show'); disarmCardDel(); }
+function closeCard(skipBoardRefresh = false){ openCardId = null; $('card-modal-backdrop').classList.remove('show'); disarmCardDel(); if (!skipBoardRefresh && currentView === 'boards') scheduleRender(); }
 function modalFocused(){ const a = document.activeElement; return !!(a && a.closest && a.closest('#card-modal-backdrop')); }
 function syncCardModal(){
   const c = curCard();
@@ -2883,8 +2885,8 @@ function disarmCardDel(){ cmArmed = false; clearTimeout(cmTimer); $('cm-del').te
 $('cm-del').addEventListener('click', () => {
   if (!cmArmed) { cmArmed = true; $('cm-del').textContent = 'Tocá de nuevo para eliminar'; cmTimer = setTimeout(disarmCardDel, 4000); return; }
   const c = curCard();
-  disarmCardDel(); closeCard();
-  if (c) { purgeFiles(c); deleteCardAndMirror(c).then(ok => { if (ok) showToast('Tarjeta eliminada'); }); }
+  disarmCardDel(); closeCard(true);
+  if (c) { purgeFiles(c); deleteCardAndMirror(c).then(ok => { if (ok) showToast('Tarjeta eliminada'); else scheduleRender(); }); }
 });
 document.addEventListener('keydown', (e) => {
   if (e.key !== 'Escape') return;
