@@ -119,6 +119,7 @@ function fsDoc(d) {
   const o = {}; const f = (d && d.fields) || {};
   for (const k in f) o[k] = fsDecode(f[k]);
   o.__id = d && d.name ? String(d.name).split('/').pop() : '';
+  o.__updateTime = d && d.updateTime ? d.updateTime : '';
   return o;
 }
 async function fsGet(ctx, path) {
@@ -264,41 +265,53 @@ function dueNoticeKind(dueDate, today) {
 function reminderMapValue(value) {
   return value && typeof value === 'object' && !Array.isArray(value) ? value : {};
 }
-async function fsPatchTaskReminderState(ctx, collection, id, state) {
+async function fsPatchTaskReminderState(ctx, collection, id, state, updateTime) {
+  if (!updateTime) return false;
   const fields = {};
   for (const uid of Object.keys(state)) fields[uid] = { stringValue: String(state[uid]) };
-  const res = await fetch(fsBase(ctx.pid) + '/' + collection + '/' + seg(id) + '?updateMask.fieldPaths=avisosVencimiento&currentDocument.exists=true', {
+  const url = fsBase(ctx.pid) + '/' + collection + '/' + seg(id) +
+    '?updateMask.fieldPaths=avisosVencimiento&currentDocument.updateTime=' + encodeURIComponent(updateTime);
+  const res = await fetch(url, {
     method: 'PATCH',
     headers: { Authorization: 'Bearer ' + ctx.at, 'Content-Type': 'application/json' },
     body: JSON.stringify({ fields: { avisosVencimiento: { mapValue: { fields } } } })
   });
   return res.ok;
 }
-async function avisarAsignados(ctx, item, collection, dueDate, today, origin, state) {
+async function avisarAsignados(ctx, item, collection, dueDate, today, origin) {
   const notice = dueNoticeKind(dueDate, today);
   if (!notice) return 0;
   const assignees = Array.isArray(item.asignados) && item.asignados.length
     ? item.asignados.filter(Boolean)
     : (item.asignado ? [item.asignado] : []);
-  if (!assignees.length) return 0;
+  const state = reminderMapValue(item.avisosVencimiento);
+  const pending = [...new Set(assignees)].filter((uid) => state[uid] !== notice.key);
+  if (!pending.length) return 0;
+
+  // Reclamo el aviso ANTES de enviarlo. updateTime permite que solo una
+  // ejecución gane, aunque dos cron se solapen.
+  const claimedState = { ...state };
+  for (const uid of pending) claimedState[uid] = notice.key;
+  const claimed = await fsPatchTaskReminderState(ctx, collection, item.__id, claimedState, item.__updateTime);
+  if (!claimed) return 0;
+
   let sent = 0;
-  for (const uid of [...new Set(assignees)]) {
-    if (state[uid] === notice.key) continue;
+  for (const uid of pending) {
     const tokens = await fsList(ctx, 'users/' + seg(uid) + '/tokens', 1000);
-    let delivered = false;
-    for (const t of tokens) {
-      if (!t.token) continue;
+    const uniqueTokens = [...new Set(tokens.map((t) => t.token).filter(Boolean))];
+    for (const token of uniqueTokens) {
       const title = notice.title + ': ' + String(item.titulo || 'Sin título').slice(0, 100);
       const body = notice.bodyPrefix + (item.cliente ? ' · ' + String(item.cliente).slice(0, 60) : '') + '. Abrí Obox para revisarla.';
-      const r = await sendFcm(ctx, t.token, { title, body }, {
+      const r = await sendFcm(ctx, token, { title, body }, {
         tipo: 'vencimiento',
         coleccion: collection,
         id: String(item.__id)
       }, origin);
-      if (r.ok) { sent++; delivered = true; }
-      else if (r.dead) await fsDelete(ctx, 'users/' + seg(uid) + '/tokens/' + seg(t.token));
+      if (r.ok) sent++;
+      else if (r.dead) {
+        for (const t of tokens) if (t.token === token) await fsDelete(ctx, 'users/' + seg(uid) + '/tokens/' + seg(t.__id));
+      }
     }
-    if (delivered) state[uid] = notice.key;
   }
   return sent;
 }
@@ -312,10 +325,8 @@ async function procesarAvisosVencimiento(ctx, now, origin) {
     if (!t.fecha || t.estado === 'Hecho') continue;
     const assigned = (Array.isArray(t.asignados) && t.asignados.length) || t.asignado;
     if (!assigned) continue;
-    const state = reminderMapValue(t.avisosVencimiento);
     revisadas++;
-    enviados += await avisarAsignados(ctx, t, 'tasks', String(t.fecha), clock.date, origin, state);
-    await fsPatchTaskReminderState(ctx, 'tasks', t.__id, state);
+    enviados += await avisarAsignados(ctx, t, 'tasks', String(t.fecha), clock.date, origin);
   }
   return { revisadas, enviados };
 }
