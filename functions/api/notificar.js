@@ -124,6 +124,7 @@ function fsDoc(d) {
   const o = {}; const f = (d && d.fields) || {};
   for (const k in f) o[k] = fsDecode(f[k]);
   o.__id = d && d.name ? String(d.name).split('/').pop() : '';
+  o.__updateTime = d && d.updateTime ? d.updateTime : '';
   return o;
 }
 async function fsGet(ctx, path) {
@@ -142,12 +143,16 @@ async function fsList(ctx, path) {
 async function fsDelete(ctx, path) {
   await fetch(fsBase(ctx.pid) + '/' + path, { method: 'DELETE', headers: { Authorization: 'Bearer ' + ctx.at } }).catch(() => {});
 }
-async function fsMarkNotified(ctx, path, at) {
-  await fetch(fsBase(ctx.pid) + '/' + path + '?updateMask.fieldPaths=avisadoAt&currentDocument.exists=true', {
+async function fsMarkNotified(ctx, path, at, updateTime) {
+  if (!updateTime) return false;
+  const url = fsBase(ctx.pid) + '/' + path +
+    '?updateMask.fieldPaths=avisadoAt&currentDocument.updateTime=' + encodeURIComponent(updateTime);
+  const res = await fetch(url, {
     method: 'PATCH',
     headers: { Authorization: 'Bearer ' + ctx.at, 'Content-Type': 'application/json' },
     body: JSON.stringify({ fields: { avisadoAt: { integerValue: String(at) } } })
-  }).catch(() => {});
+  }).catch(() => null);
+  return !!(res && res.ok);
 }
 
 /* ---------- FCM ---------- */
@@ -205,8 +210,10 @@ export async function onRequestPost({ request, env }) {
     const nuevos = [...new Set(Array.isArray(doc.asignadoNuevos) ? doc.asignadoNuevos : (doc.asignado ? [doc.asignado] : []))]
       .filter((u) => typeof u === 'string' && u !== caller.uid && current.has(u)).slice(0, 10);
 
-    // Se marca primero, así dos llamadas seguidas no mandan el aviso doble.
-    await fsMarkNotified(ctx, path, at);
+    // Reclamo la notificación con una precondición de versión: si dos llamadas
+    // llegan juntas, solo una puede marcar el documento y continuar con el envío.
+    const claimed = await fsMarkNotified(ctx, path, at, doc.__updateTime);
+    if (!claimed) return json({ ok: true, skipped: 'ya avisado o en proceso' });
     if (!nuevos.length) return json({ ok: true, sent: 0 });
 
     const [u, cl] = await Promise.all([fsGet(ctx, 'users/' + seg(caller.uid)), doc.cliente ? fsGet(ctx, 'clients/' + seg(doc.cliente)) : null]);
@@ -238,11 +245,14 @@ export async function onRequestPost({ request, env }) {
       const member = await fsGet(ctx, 'members/' + seg(target));
       if (!canSee(member, doc.cliente)) continue;
       const tokens = await fsList(ctx, 'users/' + seg(target) + '/tokens');
-      for (const t of tokens) {
-        if (!t.token) continue;
-        const r = await sendFcm(ctx, t.token, { title, body: bodyText }, data, origin);
+      // Un token duplicado en Firestore no debe generar dos avisos al mismo dispositivo.
+      const uniqueTokens = [...new Set(tokens.map((t) => t.token).filter(Boolean))];
+      for (const token of uniqueTokens) {
+        const r = await sendFcm(ctx, token, { title, body: bodyText }, data, origin);
         if (r.ok) sent++;
-        else if (r.dead) await fsDelete(ctx, 'users/' + seg(target) + '/tokens/' + seg(t.token));
+        else if (r.dead) {
+          for (const t of tokens) if (t.token === token) await fsDelete(ctx, 'users/' + seg(target) + '/tokens/' + seg(t.__id));
+        }
       }
     }
     return json({ ok: true, sent });
