@@ -222,7 +222,25 @@ async function pingNotify(col, id){
     if (col !== 'tasks' && col !== 'cards') return; // Push para tareas y asignaciones directas de Trello.
     if (mode !== 'db' || !FB.auth || !FB.auth.currentUser || !pushViaWorker()) return;
     const token = await FB.auth.currentUser.getIdToken();
-    await fetch('/api/notificar', { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + token }, body: JSON.stringify({ col, id }), keepalive: true });
+    const send = () => fetch('/api/notificar', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + token },
+      body: JSON.stringify({ col, id }),
+      keepalive: true
+    });
+    let response = await send();
+    let result = null;
+    try { result = await response.json(); } catch(e) {}
+    // Si FCM rechazó el envío por un fallo transitorio, el servidor libera la marca
+    // y hacemos un segundo intento automático.
+    if (response.ok && result && result.sent === 0 && result.failed > 0) {
+      await new Promise(resolve => setTimeout(resolve, 1200));
+      response = await send();
+      try { result = await response.json(); } catch(e) {}
+    }
+    if (!response.ok || (result && result.sent === 0 && (result.noTokens || result.noAccess))) {
+      console.warn('Obox: no se pudo entregar la notificación push', result || response.status);
+    }
   } catch(e) { /* sin aviso al celular */ }
 }
 function afterAssign(col, id, saved, patch){
