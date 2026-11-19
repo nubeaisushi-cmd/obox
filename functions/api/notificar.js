@@ -240,22 +240,41 @@ export async function onRequestPost({ request, env }) {
     const origin = new URL(request.url).origin;
     const data = { tipo, id: String(id), boardId: String(doc.boardId || '') };
 
-    let sent = 0;
+    let sent = 0, attempted = 0, failed = 0, noAccess = 0, noTokens = 0;
     for (const target of nuevos) {
       const member = await fsGet(ctx, 'members/' + seg(target));
-      if (!canSee(member, doc.cliente)) continue;
+      if (!canSee(member, doc.cliente)) { noAccess++; continue; }
       const tokens = await fsList(ctx, 'users/' + seg(target) + '/tokens');
       // Un token duplicado en Firestore no debe generar dos avisos al mismo dispositivo.
       const uniqueTokens = [...new Set(tokens.map((t) => t.token).filter(Boolean))];
+      if (!uniqueTokens.length) { noTokens++; continue; }
       for (const token of uniqueTokens) {
-        const r = await sendFcm(ctx, token, { title, body: bodyText }, data, origin);
+        attempted++;
+        let r = await sendFcm(ctx, token, { title, body: bodyText }, data, origin);
+        // Reintento breve ante fallos transitorios de FCM.
+        if (!r.ok && !r.dead) r = await sendFcm(ctx, token, { title, body: bodyText }, data, origin);
         if (r.ok) sent++;
-        else if (r.dead) {
-          for (const t of tokens) if (t.token === token) await fsDelete(ctx, 'users/' + seg(target) + '/tokens/' + seg(t.__id));
+        else {
+          failed++;
+          if (r.dead) {
+            for (const t of tokens) if (t.token === token) await fsDelete(ctx, 'users/' + seg(target) + '/tokens/' + seg(t.__id));
+          }
         }
       }
     }
-    return json({ ok: true, sent });
+    // Si ningún dispositivo recibió el aviso, liberar la marca para permitir un nuevo intento.
+    if (!sent) {
+      const latest = await fsGet(ctx, path);
+      if (latest && Number(latest.avisadoAt) === at && latest.__updateTime) {
+        const url = fsBase(ctx.pid) + '/' + path + '?updateMask.fieldPaths=avisadoAt&currentDocument.updateTime=' + encodeURIComponent(latest.__updateTime);
+        await fetch(url, {
+          method: 'PATCH',
+          headers: { Authorization: 'Bearer ' + ctx.at, 'Content-Type': 'application/json' },
+          body: JSON.stringify({ fields: { avisadoAt: { nullValue: null } } })
+        }).catch(() => {});
+      }
+    }
+    return json({ ok: true, sent, attempted, failed, noAccess, noTokens });
   } catch (e) {
     return json({ ok: false, error: 'error interno' }, 500);
   }
